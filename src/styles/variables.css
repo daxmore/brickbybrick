@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@theme {
+  /* Static Design System Tokens */
+  --color-miro-blue-450: #5b76fe;
+  --color-miro-near-black: #1c1c1e;
+  --color-miro-border: #c7cad5;
+  --color-miro-success: #00b473;
+  
+  --radius-miro: 8px;
+  --shadow-miro-ring: 0 0 0 1px rgb(224, 226, 232);
+}
+
+:root {
+  /* Dynamic Styles (Managed by ProjectContext) */
+  --bg-color: #ffffff;
+  --primary-color: #5b76fe;
+  --text-color: #1c1c1e;
+  --accent-color: #ffc6c6;
+  --border-radius: 8px;
+  --font-size: 16px;
+  --font-family: 'Inter', 'Noto Sans', sans-serif;
+  --section-padding: 60px;
+  --nav-bg: #ffffff;
+  --footer-bg: #1c1c1e;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-entry {
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: var(--font-family);
+  font-weight: var(--font-weight, 400);
+  @apply antialiased;
+}
