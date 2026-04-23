@@ -9,7 +9,6 @@ import {
   Clock, 
   Layout, 
   Search,
-  MoreVertical,
   ChevronRight,
   Monitor
 } from 'lucide-react';
@@ -96,28 +95,28 @@ const Dashboard = () => {
       }
     };
 
-    const blockPresets = {
+    const nodePresets = {
       startup: [
-        { id: `b_${Date.now()}_1`, type: 'navbar', props: { logo: project.name } },
-        { id: `b_${Date.now()}_2`, type: 'hero', props: { title: `Modern ${project.name} Solutions` } },
-        { id: `b_${Date.now()}_3`, type: 'features', props: {} },
-        { id: `b_${Date.now()}_4`, type: 'blogList', props: { title: 'Engineering the Future' } },
-        { id: `b_${Date.now()}_5`, type: 'footer', props: { brandName: project.name } }
+        { id: `n_${Date.now()}_1`, type: 'navbar', props: { logo: project.name }, styles: {}, children: [] },
+        { id: `n_${Date.now()}_2`, type: 'hero', props: { title: `Modern ${project.name} Solutions` }, styles: {}, children: [] },
+        { id: `n_${Date.now()}_3`, type: 'features', props: {}, styles: {}, children: [] },
+        { id: `n_${Date.now()}_4`, type: 'blogList', props: { title: 'Engineering the Future' }, styles: {}, children: [] },
+        { id: `n_${Date.now()}_5`, type: 'footer', props: { brandName: project.name }, styles: {}, children: [] }
       ],
       clothing: [
-        { id: `b_${Date.now()}_1`, type: 'navbar', props: { logo: project.name } },
-        { id: `b_${Date.now()}_2`, type: 'hero', props: { title: `The ${project.name} Aesthetic` } },
-        { id: `b_${Date.now()}_3`, type: 'caseStudy', props: { title: 'Recent Collaborations' } },
-        { id: `b_${Date.now()}_4`, type: 'gallery', props: {} },
-        { id: `b_${Date.now()}_5`, type: 'footer', props: { brandName: project.name } }
+        { id: `n_${Date.now()}_1`, type: 'navbar', props: { logo: project.name }, styles: {}, children: [] },
+        { id: `n_${Date.now()}_2`, type: 'hero', props: { title: `The ${project.name} Aesthetic` }, styles: {}, children: [] },
+        { id: `n_${Date.now()}_3`, type: 'caseStudy', props: { title: 'Recent Collaborations' }, styles: {}, children: [] },
+        { id: `n_${Date.now()}_4`, type: 'gallery', props: {}, styles: {}, children: [] },
+        { id: `n_${Date.now()}_5`, type: 'footer', props: { brandName: project.name }, styles: {}, children: [] }
       ],
       hospital: [
-        { id: `b_${Date.now()}_1`, type: 'navbar', props: { logo: project.name } },
-        { id: `b_${Date.now()}_2`, type: 'hero', props: { title: `${project.name} Excellence` } },
-        { id: `b_${Date.now()}_3`, type: 'features', props: {} },
-        { id: `b_${Date.now()}_4`, type: 'blogList', props: { title: 'Health & Wellness Hub' } },
-        { id: `b_${Date.now()}_5`, type: 'faq', props: {} },
-        { id: `b_${Date.now()}_6`, type: 'footer', props: { brandName: project.name } }
+        { id: `n_${Date.now()}_1`, type: 'navbar', props: { logo: project.name }, styles: {}, children: [] },
+        { id: `n_${Date.now()}_2`, type: 'hero', props: { title: `${project.name} Excellence` }, styles: {}, children: [] },
+        { id: `n_${Date.now()}_3`, type: 'features', props: {}, styles: {}, children: [] },
+        { id: `n_${Date.now()}_4`, type: 'blogList', props: { title: 'Health & Wellness Hub' }, styles: {}, children: [] },
+        { id: `n_${Date.now()}_5`, type: 'faq', props: {}, styles: {}, children: [] },
+        { id: `n_${Date.now()}_6`, type: 'footer', props: { brandName: project.name }, styles: {}, children: [] }
       ]
     };
 
@@ -125,7 +124,7 @@ const Dashboard = () => {
     const newPage = {
       id: newPageId,
       name: `My ${project.name} Page`,
-      blocks: blockPresets[project.type],
+      nodes: nodePresets[project.type],
       styles: presets[project.type]
     };
 
@@ -139,10 +138,10 @@ const Dashboard = () => {
     const newPage = {
       id: newPageId,
       name: newPageName,
-      blocks: [
-        { id: `b_${Date.now()}_1`, type: 'navbar', props: { logo: newPageName } },
-        { id: `b_${Date.now()}_2`, type: 'hero', props: { title: `Welcome to ${newPageName}` } },
-        { id: `b_${Date.now()}_3`, type: 'footer', props: { brandName: newPageName } }
+      nodes: [
+        { id: `n_${Date.now()}_1`, type: 'navbar', props: { logo: newPageName }, styles: {}, children: [] },
+        { id: `n_${Date.now()}_2`, type: 'hero', props: { title: `Welcome to ${newPageName}` }, styles: {}, children: [] },
+        { id: `n_${Date.now()}_3`, type: 'footer', props: { brandName: newPageName }, styles: {}, children: [] }
       ],
       styles: {
         bgColor: "#ffffff",
@@ -302,7 +301,7 @@ const Dashboard = () => {
                         <Clock size={12} /> {page.updatedAt ? `Edited ${new Date(page.updatedAt).toLocaleDateString()}` : `Created ${new Date(page.createdAt || 0).toLocaleDateString()}`}
                       </span>
                       <span>•</span>
-                      <span>{(page.blocks || []).length} Sections</span>
+                      <span>{(page.nodes || page.blocks || []).length} Sections</span>
                     </div>
                   </div>
 

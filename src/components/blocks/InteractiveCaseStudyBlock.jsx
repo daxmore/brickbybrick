@@ -1,4 +1,5 @@
 import React from 'react';
+// eslint-disable-next-line no-unused-vars
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useProject } from '../../context/ProjectContext';
 import { ExternalLink, ArrowRight } from 'lucide-react';
@@ -8,6 +9,7 @@ const InteractiveCaseStudyBlock = ({ id, props, editMode }) => {
   const isSelected = selectedBlockId === id;
   const containerRef = React.useRef(null);
 
+  // eslint-disable-next-line no-unused-vars
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start end", "end start"]

@@ -1,136 +1,78 @@
 import React from 'react';
 import { useProject } from '../context/ProjectContext';
-import { Reorder, useDragControls } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
-import NavbarBlock from '../components/blocks/NavbarBlock';
-import HeroBlock from '../components/blocks/HeroBlock';
-import FooterBlock from '../components/blocks/FooterBlock';
-import FeatureGridBlock from '../components/blocks/FeatureGridBlock';
-import PricingBlock from '../components/blocks/PricingBlock';
-import TestimonialBlock from '../components/blocks/TestimonialBlock';
-import FAQBlock from '../components/blocks/FAQBlock';
-import ContactBlock from '../components/blocks/ContactBlock';
-import LogoCloudBlock from '../components/blocks/LogoCloudBlock';
-import TeamBlock from '../components/blocks/TeamBlock';
-import GalleryBlock from '../components/blocks/GalleryBlock';
-import BlogListBlock from '../components/blocks/BlogListBlock';
-import InteractiveCaseStudyBlock from '../components/blocks/InteractiveCaseStudyBlock';
-import StatsBlock from '../components/blocks/StatsBlock';
-import NewsletterBlock from '../components/blocks/NewsletterBlock';
-import EditorialBlock from '../components/blocks/EditorialBlock';
-import { Trash2, ArrowUp, ArrowDown, Copy, Plus, X, Eye, EyeOff, Monitor, Smartphone, Tablet, Layout, Code, GripVertical, Menu, Image, MessageSquare, HelpCircle, Users, BookOpen, Briefcase, Hash, Mail, FileText } from 'lucide-react';
-
-const BLOCK_MAP = {
-  navbar: NavbarBlock,
-  hero: HeroBlock,
-  footer: FooterBlock,
-  features: FeatureGridBlock,
-  pricing: PricingBlock,
-  testimonials: TestimonialBlock,
-  faq: FAQBlock,
-  contact: ContactBlock,
-  logos: LogoCloudBlock,
-  team: TeamBlock,
-  gallery: GalleryBlock,
-  blogList: BlogListBlock,
-  caseStudy: InteractiveCaseStudyBlock,
-  stats: StatsBlock,
-  newsletter: NewsletterBlock,
-  editorial: EditorialBlock
-};
-
-const UnknownBlock = ({ type }) => (
-  <div className="p-12 border-2 border-dashed border-[#c7cad5] text-center text-slate-400 bg-slate-50 font-bold">
-    Unknown block: {type}
-  </div>
-);
-
-const BlockWrapper = ({ block, index, total, editMode }) => {
-  const { reorderBlocks, deleteBlock, duplicateBlock, addBlock, previewMode } = useProject();
-  const controls = useDragControls();
-
-  const BlockComponent = BLOCK_MAP[block.type] || UnknownBlock;
-
-  if (previewMode) {
-    return (
-      <div className="relative group/block">
-        <BlockComponent id={block.id} props={block.props || {}} editMode={false} />
-      </div>
-    );
-  }
-
-  return (
-    <Reorder.Item 
-      value={block} 
-      id={block.id}
-      dragListener={false}
-      dragControls={controls}
-      className="relative group/block bg-white"
-    >
-      {/* Insert Before */}
-      {editMode && !previewMode && (
-        <button 
-          onClick={() => addBlock('hero', index)}
-          className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#5b76fe] text-white p-1 rounded-full opacity-0 group-hover/block:opacity-100 transition-opacity z-30 scale-75 hover:scale-100 shadow-lg"
-          title="Insert block here"
-        >
-          <Plus size={16} />
-        </button>
-      )}
-
-      {/* Block Controls */}
-      {editMode && !previewMode && (
-        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover/block:opacity-100 transition-opacity z-30 bg-white/95 p-1 rounded-lg border border-[#c7cad5] shadow-xl backdrop-blur-sm">
-          <button
-            className="p-1.5 hover:bg-slate-100 rounded text-slate-600 transition-colors cursor-grab active:cursor-grabbing"
-            onPointerDown={(e) => controls.start(e)}
-            style={{ touchAction: "none" }}
-            title="Drag to reorder"
-          >
-            <GripVertical size={14} />
-          </button>
-          <div className="w-[1px] bg-[#e9eaef] mx-0.5" />
-          <button 
-            disabled={index === 0}
-            onClick={(e) => { e.stopPropagation(); reorderBlocks(index, index - 1); }}
-            className="p-1.5 hover:bg-slate-100 rounded text-slate-600 disabled:opacity-30 transition-colors"
-          >
-            <ArrowUp size={14} />
-          </button>
-          <button 
-            disabled={index === total - 1}
-            onClick={(e) => { e.stopPropagation(); reorderBlocks(index, index + 1); }}
-            className="p-1.5 hover:bg-slate-100 rounded text-slate-600 disabled:opacity-30 transition-colors"
-          >
-            <ArrowDown size={14} />
-          </button>
-          <div className="w-[1px] bg-[#e9eaef] mx-0.5" />
-          <button 
-            onClick={(e) => { e.stopPropagation(); duplicateBlock(block.id); }}
-            className="p-1.5 hover:bg-slate-100 rounded text-slate-600 transition-colors"
-          >
-            <Copy size={14} />
-          </button>
-          <button 
-            onClick={(e) => { e.stopPropagation(); deleteBlock(block.id); }}
-            className="p-1.5 hover:bg-red-50 rounded text-red-500 transition-colors"
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
-      )}
-
-      <div className="animate-entry">
-        <BlockComponent id={block.id} props={block.props || {}} editMode={editMode && !previewMode} />
-      </div>
-    </Reorder.Item>
-  );
-};
+import NodeRenderer from '../components/NodeRenderer';
+import { 
+  Plus, X, Eye, EyeOff, Monitor, Smartphone, Tablet, 
+  Layout, Code, Menu, Image, MessageSquare, HelpCircle, 
+  Users, BookOpen, Briefcase, Hash, Mail, FileText, 
+  Square, Type, Grid as GridIcon
+} from 'lucide-react';
 
 const BlankCanvas = () => {
-  const { currentPage, deviceView, setDeviceView, addBlock, previewMode, setPreviewMode, setBlocks } = useProject();
+  const { 
+    currentPage, 
+    deviceView, 
+    setDeviceView, 
+    addNode, 
+    previewMode, 
+    setPreviewMode,
+    undo,
+    redo,
+    selectedNodeId,
+    deleteNode,
+    duplicateNode,
+    moveNode,
+    savePage
+  } = useProject();
+  
   const [showLibrary, setShowLibrary] = React.useState(false);
-  const [insertIndex, setInsertIndex] = React.useState(null);
+
+  // Keyboard Shortcuts
+  React.useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (previewMode) return;
+
+      // Check if user is typing in an input or contentEditable
+      const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable;
+      
+      // Undo/Redo
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        if (e.shiftKey) {
+          e.preventDefault();
+          redo();
+        } else {
+          e.preventDefault();
+          undo();
+        }
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+        e.preventDefault();
+        redo();
+      }
+
+      // Delete
+      if ((e.key === 'Backspace' || e.key === 'Delete') && !isInput && selectedNodeId) {
+        e.preventDefault();
+        deleteNode(selectedNodeId);
+      }
+
+      // Duplicate
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd' && selectedNodeId) {
+        e.preventDefault();
+        duplicateNode(selectedNodeId);
+      }
+
+      // Save
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        savePage();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [previewMode, undo, redo, selectedNodeId, deleteNode, duplicateNode, savePage]);
 
   const deviceWidths = {
     desktop: 'max-w-full',
@@ -138,15 +80,29 @@ const BlankCanvas = () => {
     mobile: 'max-w-[375px]'
   };
 
-  const handleAddClick = (index = null) => {
-    setInsertIndex(index);
+  const handleAddClick = () => {
     setShowLibrary(true);
   };
 
-  const onSelectBlock = (type) => {
-    addBlock(type, insertIndex);
+  const onSelectNode = (type) => {
+    // If a Box node is selected, add as child. Otherwise add to root.
+    // For now, let's just add to root to maintain existing behavior 
+    // until we implement the full Layers panel.
+    addNode(type);
     setShowLibrary(false);
-    setInsertIndex(null);
+  };
+
+  const handleRootDrop = (e) => {
+    if (previewMode) return;
+    e.preventDefault();
+    const nodeType = e.dataTransfer.getData('nodeType');
+    const existingNodeId = e.dataTransfer.getData('nodeId');
+
+    if (nodeType) {
+      addNode(nodeType, null);
+    } else if (existingNodeId) {
+      moveNode(existingNodeId, null);
+    }
   };
 
   return (
@@ -155,7 +111,7 @@ const BlankCanvas = () => {
       
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
         {/* Responsive Toolbar */}
-        <div className="h-14 border-b border-[#c7cad5] bg-white flex justify-between items-center px-4 shrink-0 z-10 shadow-sm">
+        <div className="h-14 border-b border-[#c7cad5] bg-white flex justify-between items-center px-4 shrink-0 z-50 shadow-sm">
           <div className="flex-1">
             {previewMode && (
               <button 
@@ -172,7 +128,7 @@ const BlankCanvas = () => {
               onClick={() => setDeviceView('desktop')}
               className={`p-2 rounded transition-all ${deviceView === 'desktop' ? 'bg-[#5b76fe]/10 text-[#5b76fe] ring-1 ring-[#5b76fe]/20' : 'hover:bg-slate-50 text-slate-400'}`}
             >
-              <Eye size={20} />
+              <Monitor size={20} />
             </button>
             <button 
               onClick={() => setDeviceView('tablet')}
@@ -200,55 +156,41 @@ const BlankCanvas = () => {
         </div>
 
         {/* Canvas Area */}
-        <div className={`flex-1 overflow-y-auto flex justify-center items-start scroll-smooth transition-all duration-500 ${previewMode ? 'p-0' : 'p-12'}`}>
+        <div 
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={handleRootDrop}
+          className={`flex-1 overflow-y-auto flex justify-center items-start scroll-smooth transition-all duration-500 ${previewMode ? 'p-0' : 'p-12'}`}
+        >
           <div className={`bg-white shadow-[0_0_50px_-12px_rgba(0,0,0,0.1)] overflow-hidden min-h-[85vh] transition-all duration-500 w-full ${deviceWidths[deviceView]} ${previewMode ? 'border-0' : 'border border-[#c7cad5]'}`}>
             
-            {!previewMode ? (
-              <Reorder.Group axis="y" values={currentPage.blocks || []} onReorder={setBlocks} className="w-full">
-                {(currentPage.blocks || []).map((block, i) => (
-                  <BlockWrapper 
-                    key={block.id} 
-                    block={block} 
-                    index={i} 
-                    total={(currentPage.blocks || []).length} 
-                    editMode={true} 
-                  />
-                ))}
-              </Reorder.Group>
-            ) : (
-              (currentPage.blocks || []).map((block, i) => (
-                <BlockWrapper 
-                  key={block.id} 
-                  block={block} 
-                  index={i} 
-                  total={(currentPage.blocks || []).length} 
-                  editMode={false} 
-                />
-              ))
-            )}
+            <div className="w-full">
+              {(currentPage.nodes || []).map((node) => (
+                <NodeRenderer key={node.id} node={node} />
+              ))}
+            </div>
             
             {/* Add Section Button */}
             {!previewMode && (
               <div className="py-16 flex justify-center bg-slate-50/50 border-t border-dashed border-[#c7cad5] group/add">
                 <button 
-                  onClick={() => handleAddClick()}
+                  onClick={handleAddClick}
                   className="flex items-center gap-2 px-8 py-4 border-2 border-dashed border-[#c7cad5] rounded-2xl text-slate-400 font-bold hover:border-[#5b76fe] hover:text-[#5b76fe] hover:bg-white hover:shadow-xl transition-all"
                 >
-                  <Plus size={24} /> Add New Section
+                  <Plus size={24} /> Add New Node
                 </button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Block Library Modal */}
+        {/* Node Library Modal */}
         {showLibrary && (
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[100] animate-in fade-in duration-200">
             <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl border border-[#c7cad5]">
               <div className="p-6 border-b border-[#e9eaef] flex justify-between items-center bg-slate-50">
                 <div>
-                  <h2 className="text-2xl font-black text-slate-800">Add Section</h2>
-                  <p className="text-sm text-slate-500">Choose a component to add to your page</p>
+                  <h2 className="text-2xl font-black text-slate-800">Add Node</h2>
+                  <p className="text-sm text-slate-500">Choose a primitive or hybrid component</p>
                 </div>
                 <button 
                   onClick={() => setShowLibrary(false)}
@@ -261,6 +203,14 @@ const BlankCanvas = () => {
               <div className="flex-1 overflow-y-auto p-8">
                 <div className="space-y-8">
                   {[
+                    {
+                      category: "Primitives (Webflow Style)",
+                      blocks: [
+                        { type: 'Box', label: 'Box / Div', desc: 'Container for other elements', icon: <Square /> },
+                        { type: 'Text', label: 'Text Block', desc: 'Heading or paragraph text', icon: <Type /> },
+                        { type: 'Box', label: 'Grid / Flex', desc: 'Layout container', icon: <GridIcon /> },
+                      ]
+                    },
                     {
                       category: "Core & Conversion",
                       blocks: [
@@ -287,14 +237,8 @@ const BlankCanvas = () => {
                       category: "Creative & Cinematic",
                       blocks: [
                         { type: 'caseStudy', label: 'Case Study', desc: 'Cinematic scroll-driven project reveal', icon: <Briefcase /> },
-                      ]
-                    },
-                    {
-                      category: "Conversion & Support",
-                      blocks: [
-                        { type: 'pricing', label: 'Pricing Table', desc: 'Clear tiered subscription plans', icon: <Code /> },
-                        { type: 'faq', label: 'FAQ Accordion', desc: 'Answer common questions', icon: <HelpCircle /> },
-                        { type: 'contact', label: 'Contact Form', desc: 'Let users reach out to you', icon: <Users /> },
+                        { type: 'circularHero', label: 'Circular Hero', desc: 'Modern rotating gallery header', icon: <Monitor /> },
+                        { type: 'terminalHero', label: 'Terminal Hero', desc: 'Developer-focused text header', icon: <Code /> },
                       ]
                     }
                   ].map(group => (
@@ -303,8 +247,8 @@ const BlankCanvas = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {group.blocks.map((item) => (
                           <button 
-                            key={item.type}
-                            onClick={() => onSelectBlock(item.type)}
+                            key={item.label}
+                            onClick={() => onSelectNode(item.type)}
                             className="group p-6 border border-[#c7cad5] rounded-3xl text-left hover:border-[#5b76fe] hover:bg-[#5b76fe]/5 transition-all hover:-translate-y-1"
                           >
                             <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-4 group-hover:bg-[#5b76fe] group-hover:text-white transition-colors">

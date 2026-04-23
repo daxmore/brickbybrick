@@ -9,17 +9,35 @@ const DEFAULT_STYLES = {
   accentColor: "#ffc6c6",
   borderRadius: "8px",
   fontSize: "16px",
-  fontFamily: "'Noto Sans', sans-serif",
+  fontFamily: "'Inter', sans-serif",
   sectionPadding: "60px",
   contentGap: "32px",
   navBg: "#ffffff",
   footerBg: "#1c1c1e"
 };
 
-const INITIAL_BLOCKS = [
-  { id: 'b_1', type: 'navbar', props: { logo: 'Chameleon', links: ['Home', 'About', 'Pricing'] } },
-  { id: 'b_2', type: 'hero', props: { title: 'Build the future of visual collaboration', subtitle: 'Create, collaborate, and centralize communication for your entire team.', showCta: true, ctaText: 'Get Started' } },
-  { id: 'b_3', type: 'footer', props: { brandName: 'Chameleon Builder', copyright: '© 2026 Chameleon Inc.' } }
+const INITIAL_NODES = [
+  { 
+    id: 'n_1', 
+    type: 'navbar', 
+    props: { logo: 'Chameleon', links: ['Home', 'About', 'Pricing'] },
+    styles: {},
+    children: [] 
+  },
+  { 
+    id: 'n_2', 
+    type: 'hero', 
+    props: { title: 'Build the future of visual collaboration', subtitle: 'Create, collaborate, and centralize communication for your entire team.', showCta: true, ctaText: 'Get Started' },
+    styles: {},
+    children: [] 
+  },
+  { 
+    id: 'n_3', 
+    type: 'footer', 
+    props: { brandName: 'Chameleon Builder', copyright: '© 2026 Chameleon Inc.' },
+    styles: {},
+    children: [] 
+  }
 ];
 
 export const ProjectProvider = ({ children }) => {
@@ -27,20 +45,27 @@ export const ProjectProvider = ({ children }) => {
   const [activeView, setActiveView] = useState('dashboard');
   const [deviceView, setDeviceView] = useState('desktop'); // desktop, tablet, mobile
   const [previewMode, setPreviewMode] = useState(false);
-  const [selectedBlockId, setSelectedBlockId] = useState(null);
+  const [selectedNodeId, setSelectedNodeId] = useState(null);
+  const [hoveredNodeId, setHoveredNodeId] = useState(null);
   
+  // History State
+  const [past, setPast] = useState([]);
+  const [future, setFuture] = useState([]);
+
   const [pages, setPages] = useState(() => {
     const saved = localStorage.getItem('builder_pages');
     const parsed = saved ? JSON.parse(saved) : [];
-    // Migration logic for V1 pages
+    
+    // Migration logic for V1/V2 pages (blocks -> nodes)
     return parsed.map(page => {
-      if (page.components && !page.blocks) {
+      if (page.blocks && !page.nodes) {
         return {
           ...page,
-          blocks: page.components.map((type, i) => ({
-            id: `b_${Date.now()}_${i}`,
-            type,
-            props: {} // Default props will be handled by components
+          nodes: page.blocks.map(block => ({
+            ...block,
+            id: block.id.replace('b_', 'n_'),
+            styles: block.styles || {},
+            children: block.children || []
           }))
         };
       }
@@ -51,9 +76,36 @@ export const ProjectProvider = ({ children }) => {
   const [currentPage, setCurrentPage] = useState({
     id: "",
     name: "",
-    blocks: [...INITIAL_BLOCKS],
+    nodes: [...INITIAL_NODES],
     styles: { ...DEFAULT_STYLES }
   });
+
+  const pushToHistory = useCallback(() => {
+    setPast(prev => [...prev.slice(-19), currentPage.nodes]); // Keep last 20 states
+    setFuture([]);
+  }, [currentPage.nodes]);
+
+  const undo = useCallback(() => {
+    if (past.length === 0) return;
+    
+    const previous = past[past.length - 1];
+    const newPast = past.slice(0, past.length - 1);
+    
+    setFuture(prev => [currentPage.nodes, ...prev]);
+    setPast(newPast);
+    setCurrentPage(prev => ({ ...prev, nodes: previous }));
+  }, [past, currentPage.nodes]);
+
+  const redo = useCallback(() => {
+    if (future.length === 0) return;
+    
+    const next = future[0];
+    const newFuture = future.slice(1);
+    
+    setPast(prev => [...prev, currentPage.nodes]);
+    setFuture(newFuture);
+    setCurrentPage(prev => ({ ...prev, nodes: next }));
+  }, [future, currentPage.nodes]);
 
   const savePage = useCallback(() => {
     if (!currentPage.id) return;
@@ -99,73 +151,175 @@ export const ProjectProvider = ({ children }) => {
     }
   }, [currentPage, savePage]);
 
-  const setActiveProject = (projectName) => {
-    setActiveProjectState(projectName);
-  };
+  // --- Recursive Helper Functions ---
 
-  const updateStyle = (key, value) => {
-    setCurrentPage(prev => ({
-      ...prev,
-      styles: { ...prev.styles, [key]: value }
-    }));
-  };
-
-  const updateBlockProps = (blockId, newProps) => {
-    setCurrentPage(prev => ({
-      ...prev,
-      blocks: prev.blocks.map(b => b.id === blockId ? { ...b, props: { ...b.props, ...newProps } } : b)
-    }));
-  };
-
-  const addBlock = (type, index = null) => {
-    const newBlock = { id: `b_${Date.now()}`, type, props: {} };
-    setCurrentPage(prev => {
-      const newBlocks = [...prev.blocks];
-      if (index !== null) {
-        newBlocks.splice(index, 0, newBlock);
-      } else {
-        newBlocks.push(newBlock);
+  const findNodeById = (nodes, id) => {
+    for (const node of nodes) {
+      if (node.id === id) return node;
+      if (node.children) {
+        const found = findNodeById(node.children, id);
+        if (found) return found;
       }
-      return { ...prev, blocks: newBlocks };
-    });
-    setSelectedBlockId(newBlock.id);
+    }
+    return null;
   };
 
-  const deleteBlock = (blockId) => {
+  const updateNodeInTree = (nodes, id, updateFn) => {
+    return nodes.map(node => {
+      if (node.id === id) {
+        return updateFn(node);
+      }
+      if (node.children) {
+        return { ...node, children: updateNodeInTree(node.children, id, updateFn) };
+      }
+      return node;
+    });
+  };
+
+  const removeNodeAndReturn = (nodes, id) => {
+    let removed = null;
+    const filtered = nodes.filter(node => {
+      if (node.id === id) {
+        removed = node;
+        return false;
+      }
+      if (node.children && node.children.length > 0) {
+        const result = removeNodeAndReturn(node.children, id);
+        if (result.removed) {
+          removed = result.removed;
+          node.children = result.nodes;
+        }
+      }
+      return true;
+    });
+    return { nodes: filtered, removed };
+  };
+
+  // --- CRUD Operations ---
+
+  const addNode = (type, parentId = null, index = null) => {
+    pushToHistory();
+    const newNode = { 
+      id: `n_${Date.now()}`, 
+      type, 
+      name: type,
+      props: {}, 
+      styles: {}, 
+      children: [],
+      isHidden: false,
+      isLocked: false
+    };
+
+    setCurrentPage(prev => {
+      if (!parentId) {
+        const newNodes = [...prev.nodes];
+        if (index !== null) newNodes.splice(index, 0, newNode);
+        else newNodes.push(newNode);
+        return { ...prev, nodes: newNodes };
+      } else {
+        return {
+          ...prev,
+          nodes: updateNodeInTree(prev.nodes, parentId, (node) => {
+            const newChildren = [...(node.children || [])];
+            if (index !== null) newChildren.splice(index, 0, newNode);
+            else newChildren.push(newNode);
+            return { ...node, children: newChildren };
+          })
+        };
+      }
+    });
+    setSelectedNodeId(newNode.id);
+  };
+
+  const moveNode = (nodeId, targetParentId, index) => {
+    pushToHistory();
+    setCurrentPage(prev => {
+      const { nodes: nodesAfterRemoval, removedNode } = removeNodeAndReturn(prev.nodes, nodeId);
+      if (!removedNode) return prev;
+
+      if (!targetParentId) {
+        const newNodes = [...nodesAfterRemoval];
+        if (index !== null) newNodes.splice(index, 0, removedNode);
+        else newNodes.push(removedNode);
+        return { ...prev, nodes: newNodes };
+      } else {
+        const newNodes = updateNodeInTree(nodesAfterRemoval, targetParentId, (node) => {
+          const newChildren = [...(node.children || [])];
+          if (index !== null) newChildren.splice(index, 0, removedNode);
+          else newChildren.push(removedNode);
+          return { ...node, children: newChildren };
+        });
+        return { ...prev, nodes: newNodes };
+      }
+    });
+  };
+
+  const deleteNode = (id) => {
+    pushToHistory();
     setCurrentPage(prev => ({
       ...prev,
-      blocks: prev.blocks.filter(b => b.id !== blockId)
+      nodes: removeNodeAndReturn(prev.nodes, id).nodes
     }));
-    if (selectedBlockId === blockId) setSelectedBlockId(null);
+    if (selectedNodeId === id) setSelectedNodeId(null);
   };
 
-  const reorderBlocks = (fromIndex, toIndex) => {
-    setCurrentPage(prev => {
-      const newBlocks = [...prev.blocks];
-      const [removed] = newBlocks.splice(fromIndex, 1);
-      newBlocks.splice(toIndex, 0, removed);
-      return { ...prev, blocks: newBlocks };
-    });
-  };
-
-  const duplicateBlock = (blockId) => {
-    setCurrentPage(prev => {
-      const index = prev.blocks.findIndex(b => b.id === blockId);
-      if (index === -1) return prev;
-      const original = prev.blocks[index];
-      const copy = { ...original, id: `b_${Date.now()}` };
-      const newBlocks = [...prev.blocks];
-      newBlocks.splice(index + 1, 0, copy);
-      return { ...prev, blocks: newBlocks };
-    });
-  };
-
-  const setBlocks = (newBlocks) => {
+  const updateNodeStyles = (id, newStyles) => {
+    // Note: We don't push to history for every keystroke in styles 
+    // to avoid bloating history. We could debunce this later.
     setCurrentPage(prev => ({
       ...prev,
-      blocks: newBlocks
+      nodes: updateNodeInTree(prev.nodes, id, (node) => {
+        const styleKey = deviceView === 'desktop' ? 'styles' : (deviceView === 'tablet' ? 'tabletStyles' : 'mobileStyles');
+        return {
+          ...node,
+          [styleKey]: { ...(node[styleKey] || {}), ...newStyles }
+        };
+      })
     }));
   };
+
+  const updateNodeProps = (id, newProps) => {
+    pushToHistory();
+    setCurrentPage(prev => ({
+      ...prev,
+      nodes: updateNodeInTree(prev.nodes, id, (node) => ({
+        ...node,
+        props: { ...node.props, ...newProps },
+        ...newProps // For metadata like name, isHidden, isLocked
+      }))
+    }));
+  };
+
+  const duplicateNode = (id) => {
+    pushToHistory();
+    const nodeToDuplicate = findNodeById(currentPage.nodes, id);
+    if (!nodeToDuplicate) return;
+
+    const createCopy = (node) => ({
+      ...node,
+      id: `n_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      children: (node.children || []).map(createCopy)
+    });
+
+    const copy = createCopy(nodeToDuplicate);
+    
+    // Simple logic: insert after original in same parent
+    setCurrentPage(prev => {
+      const insertAfter = (nodes) => {
+        const index = nodes.findIndex(n => n.id === id);
+        if (index > -1) {
+          const newNodes = [...nodes];
+          newNodes.splice(index + 1, 0, copy);
+          return newNodes;
+        }
+        return nodes.map(n => n.children ? { ...n, children: insertAfter(n.children) } : n);
+      };
+      return { ...prev, nodes: insertAfter(prev.nodes) };
+    });
+    setSelectedNodeId(copy.id);
+  };
+
+  // --- Navigation & Page Management ---
 
   const loadPage = (id) => {
     const page = pages.find(p => p.id === id);
@@ -183,7 +337,7 @@ export const ProjectProvider = ({ children }) => {
       setCurrentPage({
         id: "",
         name: "",
-        blocks: [...INITIAL_BLOCKS],
+        nodes: [...INITIAL_NODES],
         styles: { ...DEFAULT_STYLES }
       });
     }
@@ -215,47 +369,21 @@ export const ProjectProvider = ({ children }) => {
     localStorage.setItem('builder_pages', JSON.stringify(updatedPages));
   };
 
-  const exportPageAsJSON = () => {
-    const blob = new Blob(
-      [JSON.stringify(currentPage, null, 2)],
-      { type: 'application/json' }
-    );
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${currentPage.name || 'page'}.json`;
-    a.click();
-  };
-
-  const importPageFromJSON = (file) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const imported = JSON.parse(e.target.result);
-        const validatedPage = {
-          ...imported,
-          id: imported.id || `imported_${Date.now()}`,
-          name: imported.name || 'Imported Page'
-        };
-        setCurrentPage(validatedPage);
-        setActiveView('canvas');
-        // The auto-save useEffect will handle adding it to the pages list
-      } catch (err) {
-        alert("Failed to parse JSON file. Please ensure it's a valid Chameleon export.");
-        console.error("Failed to parse JSON file", err);
-      }
-    };
-    reader.readAsText(file);
-  };
-
   const navigateTo = (view) => {
     setActiveView(view);
+  };
+
+  const updateStyle = (key, value) => {
+    setCurrentPage(prev => ({
+      ...prev,
+      styles: { ...prev.styles, [key]: value }
+    }));
   };
 
   return (
     <ProjectContext.Provider value={{
       activeProject,
-      setActiveProject,
+      setActiveProject: setActiveProjectState,
       activeView,
       navigateTo,
       pages,
@@ -267,20 +395,25 @@ export const ProjectProvider = ({ children }) => {
       deletePage,
       renamePage,
       duplicatePage,
-      exportPageAsJSON,
-      importPageFromJSON,
       deviceView,
       setDeviceView,
       previewMode,
       setPreviewMode,
-      selectedBlockId,
-      setSelectedBlockId,
-      updateBlockProps,
-      addBlock,
-      deleteBlock,
-      reorderBlocks,
-      duplicateBlock,
-      setBlocks
+      selectedNodeId,
+      setSelectedNodeId,
+      hoveredNodeId,
+      setHoveredNodeId,
+      undo,
+      redo,
+      canUndo: past.length > 0,
+      canRedo: future.length > 0,
+      addNode,
+      moveNode,
+      deleteNode,
+      updateNodeStyles,
+      updateNodeProps,
+      duplicateNode,
+      setNodes: (nodes) => setCurrentPage(prev => ({ ...prev, nodes }))
     }}>
       {children}
     </ProjectContext.Provider>
@@ -289,4 +422,3 @@ export const ProjectProvider = ({ children }) => {
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const useProject = () => useContext(ProjectContext);
-= () => useContext(ProjectContext);
