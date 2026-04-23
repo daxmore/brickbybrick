@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High-End Aesthetic Reveal | UI Lab</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;900&family=Inter:wght@300;400;600&display=swap"
+        rel="stylesheet">
+
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        /* 
+           --- BOUTIQUE CONFIGURATION ---
+           Clean, high-contrast, artistic.
+        */
+        :root {
+            --bg-base: #F5F5F0;
+            /* Soft White */
+            --text-dark: #1A1A1A;
+            /* Near Black */
+            --text-muted: #666666;
+            /* Dark Gray */
+
+            --font-main: 'Inter', sans-serif;
+            --font-heading: 'Outfit', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body,
+        html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: var(--font-main);
+            background-color: var(--bg-base);
+            color: var(--text-dark);
+        }
+
+        /* --- STABLE NOISE OVERLAY --- */
+        .grain-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2000;
+            opacity: 0.05;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        .custom-cursor {
+            position: fixed;
+            width: 15px;
+            height: 15px;
+            background: var(--text-dark);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 3000;
+            mix-blend-mode: difference;
+            transform: translate(-50%, -50%);
+            display: none;
+        }
+
+        /* --- PRELOADER (CINEMATIC) --- */
+        .loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--text-dark);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+        }
+
+        .loader-counter {
+            font-family: var(--font-heading);
+            font-size: clamp(4rem, 10vw, 8rem);
+            font-weight: 900;
+            color: white;
+            letter-spacing: -2px;
+        }
+
+        /* --- HERO CANVAS --- */
+        .hero-canvas {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--bg-base);
+        }
+
+        .bg-ghost-text {
+            position: absolute;
+            font-family: var(--font-heading);
+            font-size: 35vw;
+            font-weight: 900;
+            color: rgba(0, 0, 0, 0.015);
+            text-transform: uppercase;
+            line-height: 0.8;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .hero-main {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 1440px;
+            height: 100vh;
+            padding: 5vw;
+            display: flex;
+        }
+
+        .hero-header {
+            max-width: 800px;
+            position: relative;
+            z-index: 20;
+        }
+
+        .hero-title {
+            font-family: var(--font-heading);
+            font-size: clamp(3.5rem, 11vw, 9rem);
+            line-height: 0.85;
+            letter-spacing: -0.04em;
+            margin-bottom: 2rem;
+        }
+
+        .hero-title span {
+            display: block;
+            overflow: hidden;
+        }
+
+        .hero-title i {
+            display: block;
+            font-style: normal;
+            transform: translateY(105%);
+        }
+
+        .hero-sub {
+            font-size: clamp(1rem, 1.5vw, 1.2rem);
+            color: var(--text-muted);
+            max-width: 400px;
+            line-height: 1.6;
+            transform: translateY(30px);
+            opacity: 0;
+        }
+
+        /* --- COLLAGE (STATIC ONCE REVEALED) --- */
+        .collage-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .collage-item {
+            position: absolute;
+            pointer-events: auto;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.08);
+            background: #f0f0f0;
+            opacity: 0;
+            /* Animated in */
+        }
+
+        .collage-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Static Layout Positions */
+        .item-lg {
+            width: 26vw;
+            height: 36vw;
+            right: 12%;
+            top: 15%;
+            z-index: 6;
+        }
+
+        .item-md {
+            width: 18vw;
+            height: 22vw;
+            right: 40%;
+            bottom: 8%;
+            z-index: 7;
+        }
+
+        .item-sm {
+            width: 13vw;
+            height: 16vw;
+            left: 18%;
+            bottom: 12%;
+            z-index: 8;
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 1024px) {
+            .hero-title {
+                font-size: 15vw;
+            }
+
+            .item-lg {
+                width: 45vw;
+                height: 60vw;
+                right: 5%;
+                top: 25%;
+            }
+
+            .item-md,
+            .item-sm {
+                display: none;
+            }
+
+            .bg-ghost-text {
+                font-size: 50vw;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="custom-cursor" id="cursor"></div>
+    <div class="grain-overlay"></div>
+
+    <!-- Preloader -->
+    <div class="loader-overlay">
+        <div class="loader-counter">0</div>
+    </div>
+
+    <!-- Hero Content -->
+    <main class="hero-canvas">
+
+        <div class="bg-ghost-text">STUDIO</div>
+
+        <div class="hero-main">
+            <header class="hero-header">
+                <h1 class="hero-title">
+                    <span><i>AESTHETIC</i></span>
+                    <span><i>EXPERIENCE.</i></span>
+                </h1>
+                <p class="hero-sub">
+                    Elevating standard layouts into boutique digital narratives.
+                    Every pixel is a deliberate choice in the pursuit of perfection.
+                </p>
+            </header>
+        </div>
+
+        <!-- Collage Elements -->
+        <div class="collage-container">
+            <!-- Fixed Image Paths -->
+            <div class="collage-item item-lg">
+                <img src="../../assets/images/hero-1.png" alt="Imagery">
+            </div>
+            <div class="collage-item item-md">
+                <img src="../../assets/images/hero-2.png" alt="Abstract">
+            </div>
+            <div class="collage-item item-sm">
+                <img src="../../assets/images/hero-3.png" alt="Detail">
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Navigation -->
+    <link rel="stylesheet" href="../../assets/global-nav.css">
+    <script src="../../assets/global-nav.js"></script>
+
+    <script>
+        /**
+         * BOUTIQUE AESTHETIC REVEAL (STATIC UPGRADE)
+         * 
+         * 1. CINEMATIC ENTRANCE: Animate once on reveal.
+         * 2. STATIC STATE: No continuous mouse parallax as per request.
+         * 3. LOCAL ASSETS: Guaranteed image loading.
+         */
+
+        document.addEventListener("DOMContentLoaded", () => {
+            // Navigation
+            if (typeof initGlobalNav === "function") initGlobalNav("../../");
+
+            const tl = gsap.timeline();
+
+            // 1. Loader Logic
+            const counter = { val: 0 };
+            tl.to(counter, {
+                val: 100,
+                duration: 2,
+                ease: "power2.inOut",
+                onUpdate: () => {
+                    document.querySelector(".loader-counter").textContent = Math.floor(counter.val);
+                }
+            });
+
+            // 2. Reveal Wipe
+            tl.to(".loader-overlay", {
+                clipPath: "polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)",
+                duration: 1.5,
+                ease: "expo.inOut"
+            });
+
+            // 3. One-Time Entrance Animation (The "Animated Reveal")
+            tl.to(".collage-item", {
+                opacity: 1,
+                y: 0,
+                duration: 1.5,
+                stagger: 0.2,
+                ease: "power4.out",
+                startAt: { y: 100, opacity: 0 }
+            }, "-=1");
+
+            tl.to(".hero-title i", {
+                y: 0,
+                duration: 1.2,
+                stagger: 0.2,
+                ease: "power4.out"
+            }, "-=1.2");
+
+            tl.to(".hero-sub", {
+                y: 0,
+                opacity: 1,
+                duration: 1,
+                ease: "power3.out"
+            }, "-=0.8");
+
+            tl.from(".bg-ghost-text", {
+                x: 50,
+                opacity: 0,
+                duration: 2,
+                ease: "power3.out"
+            }, "-=1.5");
+
+            // --- MINIMAL INTERACTION ---
+            // Subtle custom cursor persists as it's a "premium" signature
+            const cursor = document.getElementById("cursor");
+            gsap.set(cursor, { display: "block" });
+
+            window.addEventListener("mousemove", (e) => {
+                gsap.to(cursor, {
+                    x: e.clientX,
+                    y: e.clientY,
+                    duration: 0.3,
+                    ease: "power2.out"
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>

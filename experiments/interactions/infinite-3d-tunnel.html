@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinite 3D Tunnel | UI Laboratory</title>
+    
+    <!-- Modern Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600&family=Inter:wght@300;400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../assets/global-nav.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
+    <script src="../../assets/global-nav.js"></script>
+
+    <style>
+        /* 
+           DESIGN SYSTEM: Muted Pastel Palette
+        */
+        :root {
+            --soft-blush: #E8D5D0;
+            --muted-sage: #C8D8CC;
+            --pale-lavender: #D4C9E3;
+            --soft-peach: #F0D9D1;
+            --muted-blue: #B8D4E8;
+            --soft-cream: #F5F1E8;
+            
+            --text-dark: #2D2D2D;
+            --text-muted: #7A7A7A;
+            
+            --font-main: 'Inter', sans-serif;
+            --font-display: 'Outfit', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--soft-cream);
+            color: var(--text-dark);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* 
+           3D ENVIRONMENT SETUP
+        */
+        .spotlight {
+            width: 100vw;
+            height: 100vh;
+            perspective: 1000px; /* Enable 3D perspective */
+            background-color: #0b0b0b; /* Atmosphere is dark for the tunnel feel */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #tunnel {
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d; /* Required for layered 3D space */
+            will-change: transform;
+        }
+
+        .layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            transform-style: preserve-3d;
+            will-change: transform;
+        }
+
+        .item {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 400px;
+            height: 300px;
+            transform-origin: center;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            /* Overlay variable controlled by JS */
+            --overlay: 0;
+        }
+
+        .item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* The black fade overlay */
+        .item::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            opacity: var(--overlay);
+            pointer-events: none;
+        }
+
+        /* Center Indicator / UI */
+        .overlay-ui {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            pointer-events: none;
+            text-align: center;
+        }
+
+        .overlay-ui h2 {
+            font-family: var(--font-display);
+            color: var(--soft-cream);
+            text-transform: uppercase;
+            letter-spacing: 0.5em;
+            font-size: 0.8rem;
+            opacity: 0.5;
+        }
+
+        .scroll-instruction {
+            position: fixed;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            opacity: 0.3;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="spotlight">
+        <div id="tunnel"></div>
+        
+        <div class="overlay-ui">
+            <h2>The Endless Deep</h2>
+        </div>
+
+        <div class="scroll-instruction">Scroll to navigate the tunnel</div>
+    </div>
+
+    <!-- GSAP Lib moved to head -->
+
+    <script>
+        gsap.registerPlugin(Draggable);
+        initGlobalNav('../../');
+
+        // --- CONFIGURATION ---
+        const CONFIG = {
+            totalLayers: 20,
+            layerGap: 1000, // Z-distance between layers
+            lerp: 0.05,
+            scrollSpeed: 1.5,
+            crossRadius: 600, // Distance of items from center
+            images: [
+                '../../assets/images/scroll-pin-1.png',
+                '../../assets/images/scroll-pin-2.png',
+                '../../assets/images/scroll-pin-3.png',
+                '../../assets/images/scroll-pin-4.png'
+            ]
+        };
+
+        const totalDepth = CONFIG.totalLayers * CONFIG.layerGap;
+        let targetScroll = 0;
+        let currentScroll = 0;
+
+        const tunnel = document.getElementById('tunnel');
+        const layers = [];
+
+        // --- LAYER GENERATION ---
+
+        function createTunnel() {
+            for (let i = 0; i < CONFIG.totalLayers; i++) {
+                const layer = document.createElement('div');
+                layer.className = 'layer';
+                
+                // Add 4 items in a cross pattern
+                for (let j = 0; j < 4; j++) {
+                    const item = document.createElement('div');
+                    item.className = 'item';
+                    
+                    const angle = (j * 90) * (Math.PI / 180);
+                    const x = Math.cos(angle) * CONFIG.crossRadius;
+                    const y = Math.sin(angle) * CONFIG.crossRadius;
+                    
+                    // Simple logic to select image - alternate through the 4 assets
+                    const imgSrc = CONFIG.images[(i + j) % CONFIG.images.length];
+                    item.innerHTML = `<img src="${imgSrc}" alt="Tunnel item">`;
+                    
+                    // Initial positioning
+                    gsap.set(item, {
+                        x: x - 200, // Center compensation (item width is 400)
+                        y: y - 150, // Center compensation (item height is 300)
+                        rotateZ: (angle * 180 / Math.PI) + 90 // Face inward
+                    });
+                    
+                    layer.appendChild(item);
+                }
+                
+                tunnel.appendChild(layer);
+                layers.push({
+                    el: layer,
+                    offset: i * CONFIG.layerGap,
+                    items: layer.querySelectorAll('.item')
+                });
+            }
+        }
+
+        // --- ANIMATION ENGINE ---
+
+        // Wheel Event
+        window.addEventListener('wheel', (e) => {
+            targetScroll += e.deltaY * CONFIG.scrollSpeed;
+        });
+
+        // Main Loop (using gsap.ticker for high performance)
+        gsap.ticker.add(() => {
+            // Smoothly interpolate scroll
+            currentScroll += (targetScroll - currentScroll) * CONFIG.lerp;
+            
+            layers.forEach((layer) => {
+                // Calculation for Infinite Wrapping
+                // We keep Z within 0 to totalDepth
+                let rawZ = layer.offset + currentScroll;
+                let z = rawZ % totalDepth;
+                
+                // Handle negative scrolling (modulo in JS can be negative)
+                if (z < 0) z += totalDepth;
+                
+                // Depth Fading Logic
+                // Layers further away (near totalDepth) or closest to camera (Z near 0) should fade
+                // Normalizing Z to 0-1 range for the fade calculation
+                // Camera is at a relative 1000 position in CSS perspective
+                const normalizedZ = z / totalDepth;
+                
+                // Quadratic curve for natural fall-off
+                // Black at 0 (passing camera) and black at totalDepth (farthest)
+                // Clearest at around 20% of the depth
+                const overlayValue = Math.min(1, Math.max(0, 1.2 * Math.pow(normalizedZ, 0.8)));
+                
+                // Performance: Toggle visibility for blacked out layers
+                const isHidden = overlayValue >= 0.98;
+                
+                // Apply transforms and styles
+                // We map z to negative because it moves "away" from camera
+                const zTranslate = -z;
+                
+                gsap.set(layer.el, {
+                    z: zTranslate,
+                    visibility: isHidden ? 'hidden' : 'visible'
+                });
+                
+                layer.items.forEach(item => {
+                    item.style.setProperty('--overlay', overlayValue);
+                });
+            });
+        });
+
+        // Initialize
+        createTunnel();
+
+        // Technical Note in Console
+        console.log("%c TUNNEL LAB: 3D Infinite Scroll LOADED ", "background: #B8D4E8; color: #2D2D2D; font-weight: bold; padding: 4px;");
+        console.log("Infini-Loop Logic: z = (offset + scroll) % totalDepth; Visibility culled at peak depth.");
+    </script>
+</body>
+</html>

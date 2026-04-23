@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circular Keyword Gallery | Premium Interaction</title>
+    <link rel="stylesheet" href="../../assets/global-nav.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
+    <script src="../../assets/global-nav.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital@1&family=Inter:wght@900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --text: #ffffff;
+            --accent: #00ffcc;
+            --item-size: 100px;
+            --radius: 220px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 1. HTML ARCHITECTURE - Container */
+        #main {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 100px;
+            text-align: center;
+            z-index: 10;
+        }
+
+        /* Large Paragraph Styling */
+        .copy {
+            font-size: clamp(2rem, 5vw, 4.5rem);
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            max-width: 1200px;
+            pointer-events: none; /* Let hovers pass to spans */
+        }
+
+        /* 2. TRIGGER SPANS */
+        .trigger {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-weight: 400;
+            color: var(--accent);
+            cursor: pointer;
+            pointer-events: auto;
+            position: relative;
+            display: inline-block;
+        }
+
+        /* 3. GALLERY SYSTEM */
+        #gallery {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            pointer-events: none;
+            z-index: 5; /* Sits behind text */
+            will-change: transform;
+        }
+
+        .item {
+            position: absolute;
+            width: var(--item-size);
+            height: var(--item-size);
+            background: #222;
+            border-radius: 12px;
+            overflow: hidden;
+            opacity: 0;
+            transform: scale(0.8);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            will-change: transform, opacity;
+        }
+
+        .item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="main">
+        <p class="copy">
+            We build immersive <span class="trigger" data-gallery="1">experiences</span> for global <span class="trigger" data-gallery="2">clients</span> who seek <span class="trigger" data-gallery="3">meaningful</span> digital motion and high-end <span class="trigger" data-gallery="1">aesthetics</span>.
+        </p>
+        <div class="instruction">Hover over highlighted words</div>
+    </div>
+
+    <!-- Gallery Container -->
+    <div id="gallery"></div>
+
+    <script>
+        gsap.registerPlugin(Draggable);
+        initGlobalNav('../../');
+
+        const gallery = document.getElementById('gallery');
+        const triggers = document.querySelectorAll('.trigger');
+        const totalItems = 15;
+        const radius = 220;
+
+        // 3. POLAR COORDINATE LOGIC
+        function createGallery() {
+            for (let i = 0; i < totalItems; i++) {
+                const item = document.createElement('div');
+                item.className = 'item';
+                
+                const angle = (i / totalItems) * (Math.PI * 2);
+                const x = Math.cos(angle) * radius;
+                const y = Math.sin(angle) * radius;
+
+                gsap.set(item, {
+                    x: x - 50,
+                    y: y - 50,
+                });
+
+                const img = document.createElement('img');
+                img.src = `https://picsum.photos/seed/${i + 10}/200/200`;
+                
+                item.appendChild(img);
+                gallery.appendChild(item);
+            }
+        }
+
+        createGallery();
+        const items = document.querySelectorAll('.item');
+        const itemImages = document.querySelectorAll('.item img');
+
+        // --- NEW: INFINITE SLOW ROTATION ---
+        // Rotate the gallery container
+        gsap.to(gallery, {
+            rotation: 360,
+            duration: 20,
+            repeat: -1,
+            ease: "none"
+        });
+
+        // Counter-rotate the images to keep them upright
+        items.forEach(item => {
+            gsap.to(item, {
+                rotation: -360,
+                duration: 20,
+                repeat: -1,
+                ease: "none"
+            });
+        });
+
+        // 4. MOUSE TRACKING (QuickSetter for performance)
+        const xSet = gsap.quickSetter(gallery, "x", "px");
+        const ySet = gsap.quickSetter(gallery, "y", "px");
+
+        window.addEventListener('mousemove', (e) => {
+            // Apply coordinates with slight offset logic if needed
+            xSet(e.clientX);
+            ySet(e.clientY);
+        });
+
+        // 5. HOVER TIMELINE
+        let hoverTl;
+
+        triggers.forEach(trigger => {
+            trigger.addEventListener('mouseenter', () => {
+                if(hoverTl) hoverTl.kill();
+                
+                // --- NEW: DYNAMIC IMAGE SHUFFLE ---
+                const randomSeed = Math.floor(Math.random() * 1000);
+                itemImages.forEach((img, index) => {
+                    img.src = `https://picsum.photos/seed/${randomSeed + index}/200/200`;
+                });
+
+                hoverTl = gsap.timeline();
+                
+                hoverTl.to(items, {
+                    opacity: 1,
+                    scale: 1,
+                    stagger: {
+                        each: 0.02,
+                        from: "random"
+                    },
+                    duration: 0.5,
+                    ease: "power2.out"
+                });
+
+                gsap.to(trigger, { color: "#fff", duration: 0.3 });
+            });
+
+            trigger.addEventListener('mouseleave', () => {
+                if(hoverTl) hoverTl.kill();
+                
+                gsap.to(items, {
+                    opacity: 0,
+                    scale: 0.8,
+                    duration: 0.3,
+                    ease: "power2.in"
+                });
+
+                gsap.to(trigger, { color: "#00ffcc", duration: 0.3 });
+            });
+        });
+    </script>
+</body>
+</html>

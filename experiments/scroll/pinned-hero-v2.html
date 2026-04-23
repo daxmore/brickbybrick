@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pinned Hero Reveal - Interactive Experience</title>
+    <link rel="stylesheet" href="../../assets/global-nav.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="../../assets/global-nav.js"></script>
+    <style>
+        :root {
+            --bg: #e0e0d6; /* Light beige */
+            --text: #1a1a1a;
+            --font-main: 'Inter', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-main);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            transition: background-color 0s, color 0s; /* Controlled by GSAP */
+        }
+
+        .main-container {
+            width: 100%;
+        }
+
+        /* The Main Pinned Stage */
+        .story-section {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Center Content - Always centered during pin */
+        .center-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .hero-image {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100vw;
+            height: 100vh;
+            transform: translate(-50%, -50%);
+            will-change: width, height, border-radius, transform;
+            overflow: hidden;
+            z-index: 5;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            background: #111;
+        }
+
+        .hero-image video,
+        .hero-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .hero-header {
+            position: absolute;
+            z-index: 15;
+            font-size: clamp(5rem, 15vw, 15rem);
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: -0.05em;
+            line-height: 1;
+            will-change: transform, opacity;
+            pointer-events: none;
+        }
+
+        .hero-copy {
+            position: absolute;
+            z-index: 15;
+            max-width: 650px;
+            text-align: center;
+            font-size: clamp(1.4rem, 3vw, 2.8rem);
+            font-weight: 500;
+            line-height: 1.15;
+            letter-spacing: -0.03em;
+            opacity: 0;
+            will-change: transform, opacity;
+            pointer-events: none;
+        }
+
+        .hero-copy span {
+            display: inline-block;
+            margin-right: 0.25em;
+            opacity: 0.1; /* Start dimmed */
+            will-change: opacity;
+        }
+
+        /* Side Parallax Columns (Drifting side-by-side) */
+        .side-columns {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 4vw;
+            z-index: 2;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: auto; /* Enable hover */
+        }
+
+        .column {
+            width: 18vw;
+            display: flex;
+            flex-direction: column;
+            gap: 4vh;
+            will-change: transform;
+        }
+
+        /* Scattered starting positions */
+        #col-1 { transform: translateY(110vh); }
+        #col-2 { transform: translateY(140vh); margin-top: 15vh; }
+        #col-3 { transform: translateY(120vh); margin-top: 10vh; }
+        #col-4 { transform: translateY(150vh); }
+
+        .thumbnail {
+            width: 100%;
+            aspect-ratio: 1/1; /* Square thumbnails */
+            background: #2a2a2a;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            cursor: pointer;
+            will-change: transform;
+            transform-style: preserve-3d;
+        }
+
+        .thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none; /* Ignore mouse on image to prevent jitter */
+        }
+
+        /* Stacked Cards Section */
+        .stacked-cards-section {
+            width: 100%;
+            padding: 10vh 5vw 20vh 5vw;
+            display: flex;
+            flex-direction: column;
+            gap: 15vh; 
+            background: var(--bg); 
+            position: relative;
+            z-index: 20;
+        }
+
+        .stacked-card {
+            position: sticky;
+            top: 15vh; 
+            width: 100%;
+            height: 70vh;
+            background: #161616;
+            border-radius: 24px;
+            display: flex;
+            overflow: hidden;
+            transform-origin: top center;
+            will-change: transform, opacity;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .card-content {
+            flex: 1;
+            padding: 5vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            color: #ffffff;
+            background: #161616;
+        }
+
+        .card-content h2 {
+            font-size: clamp(3rem, 5vw, 6rem);
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+            letter-spacing: -0.03em;
+            line-height: 1;
+        }
+
+        .card-content p {
+            font-size: clamp(1.2rem, 2vw, 1.6rem);
+            line-height: 1.5;
+            color: #a0a0a0;
+            max-width: 600px;
+        }
+
+        .card-image {
+            flex: 1.2;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .outro {
+            height: 50vh;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            position: relative;
+            padding-bottom: 10vh;
+        }
+
+        .outro h1 {
+            font-size: clamp(3rem, 6vw, 8rem);
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+            font-weight: 900;
+        }
+
+        /* Lenis base */
+        html.lenis {
+            height: auto;
+        }
+        .lenis-smooth {
+            scroll-behavior: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <section class="story-section">
+            <!-- Drifting side images (The 4 columns) -->
+            <div class="side-columns">
+                <div class="column" id="col-1">
+                    <div class="thumbnail"><img src="https://picsum.photos/seed/p1/600/600" alt=""></div>
+                    <div class="thumbnail"><img src="https://picsum.photos/seed/p2/600/600" alt=""></div>
+                    <div class="thumbnail"><img src="https://picsum.photos/seed/p3/600/600" alt=""></div>
+                </div>
+                <div class="column" id="col-2">
+                    <div class="thumbnail"><img src="https://picsum.photos/seed/p4/600/600" alt=""></div>
+                    <div class="thumbnail"><img src="https://picsum.photos/seed/p5/600/600" alt=""></div>
+                    <div class="thumbnail"><img src="https://picsum.photos/seed/p6/600/600" alt=""></div>
+                </div>
+                <div class="column" id="col-3">
+                    <div class="thumbnail"><img src="https://picsum.photos/seed/p7/600/600" alt=""></div>
+                    <div class="thumbnail"><img src="https://picsum.photos/seed/p8/600/600" alt=""></div>
+                    <div class="thumbnail"><img src="https://picsum.photos/seed/p9/600/600" alt=""></div>
+                </div>
+                <div class="column" id="col-4">
+                    <div class="thumbnail"><img src="https://picsum.photos/seed/p10/600/600" alt=""></div>
+                    <div class="thumbnail"><img src="https://picsum.photos/seed/p11/600/600" alt=""></div>
+                    <div class="thumbnail"><img src="https://picsum.photos/seed/p12/600/600" alt=""></div>
+                </div>
+            </div>
+
+            <!-- Central Content (Header, Morphing Video, Copy) -->
+            <div class="center-content">
+                <div class="hero-image">
+                    <img src="https://plus.unsplash.com/premium_photo-1690099567559-706ce29ef4de?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Center Hero">
+                </div>
+                
+                <h1 class="hero-header">Waabi</h1>
+                <h3 class="hero-copy">Fragments of motion and atmosphere gathered into a drifting collection of quiet visual moments.</h3>
+            </div>
+        </section>
+
+        <!-- New Stacked Cards Section -->
+        <section class="stacked-cards-section">
+            <div class="stacked-card card-1">
+                <div class="card-content">
+                    <h2>Immersive Scale</h2>
+                    <p>Experience environments that respond to your presence. The architecture of tomorrow is built on interactive foundations and boundless dimensions.</p>
+                </div>
+                <div class="card-image">
+                    <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=2070" alt="">
+                </div>
+            </div>
+            <div class="stacked-card card-2">
+                <div class="card-content">
+                    <h2>Generative Depth</h2>
+                    <p>Every frame is computed in real-time, blending reality with simulation to create seamless transitions and quiet visual moments.</p>
+                </div>
+                <div class="card-image">
+                    <img src="https://images.unsplash.com/photo-1518791841217-8f162f1e1131?auto=format&fit=crop&q=80&w=2070" alt="">
+                </div>
+            </div>
+            <div class="stacked-card card-3">
+                <div class="card-content">
+                    <h2>Infinite Horizons</h2>
+                    <p>Pushing the boundaries of what's possible on the web with high-fidelity, scroll-driven storytelling and physical presence.</p>
+                </div>
+                <div class="card-image">
+                    <img src="https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&q=80&w=2070" alt="">
+                </div>
+            </div>
+        </section>
+
+        <section class="outro">
+            <h1>The Journey Continues</h1>
+        </section>
+    </div>
+
+    <!-- Scripts moved to head for standardization -->
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.27/bundled/lenis.min.js"></script>
+
+    <script>
+        // 1. Initialize Lenis Smooth Scroll
+        const lenis = new Lenis({ 
+            duration: 1.5,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
+        });
+
+        lenis.on('scroll', ScrollTrigger.update);
+        gsap.ticker.add((time) => lenis.raf(time * 1000));
+        gsap.ticker.lagSmoothing(0);
+
+        gsap.registerPlugin(ScrollTrigger, Draggable);
+        initGlobalNav('../../');
+
+        // 2. Prepare Text for Reveal
+        const heroCopy = document.querySelector('.hero-copy');
+        const words = heroCopy.innerText.split(' ');
+        heroCopy.innerHTML = words.map(word => `<span>${word}</span>`).join(' ');
+        const wordSpans = heroCopy.querySelectorAll('span');
+
+        // Color Interpolators
+        const bgColorInterpolate = gsap.utils.interpolate("#e0e0d6", "#0b0b0b"); // Light to Dark
+        const textColorInterpolate = gsap.utils.interpolate("#1a1a1a", "#ffffff");
+
+        // 3. Main Story Sequence (Vertical Pinned)
+        const storySection = document.querySelector('.story-section');
+        const heroHeader = document.querySelector('.hero-header');
+        const heroImage = document.querySelector('.hero-image');
+
+        ScrollTrigger.create({
+            trigger: storySection,
+            start: "top top",
+            end: "+=800%", 
+            pin: true,
+            scrub: 1.2, 
+            onUpdate: (self) => {
+                const p = self.progress;
+
+                // --- Phase 1: Header Exit (0.0 to 0.22) ---
+                const headerP = gsap.utils.clamp(0, 0.22, p) / 0.22;
+                gsap.set(heroHeader, {
+                    y: -150 * headerP,
+                    opacity: 1 - (headerP * 1.8),
+                    scale: 1 - (0.05 * headerP),
+                    visibility: p > 0.25 ? 'hidden' : 'visible'
+                });
+
+                // --- Phase 2: Smooth Word-by-Word Text Reveal (0.22 to 0.55) ---
+                const copyFadeInP = gsap.utils.clamp(0.2, 0.28, p);
+                const containerOpacityIn = (copyFadeInP - 0.2) / 0.08;
+                
+                const copyP = gsap.utils.clamp(0.25, 0.55, p);
+                const normalizedCopyP = (copyP - 0.25) / 0.3;
+
+                wordSpans.forEach((word, i) => {
+                    const start = (i / wordSpans.length) * 0.8; 
+                    const end = start + 0.2; 
+                    const wordLocalP = gsap.utils.clamp(start, end, normalizedCopyP);
+                    const wordOpacity = gsap.utils.interpolate(0.1, 1, (wordLocalP - start) / 0.2);
+                    gsap.set(word, { opacity: wordOpacity });
+                });
+
+                // --- Phase 3: Video Shrinks to Center Thumbnail (0.55 to 0.8) ---
+                const shrinkP = gsap.utils.clamp(0.55, 0.8, p);
+                const normalizedShrinkP = (shrinkP - 0.55) / 0.25;
+                
+                const width = gsap.utils.interpolate(100, 20, normalizedShrinkP);
+                const height = gsap.utils.interpolate(100, 24, normalizedShrinkP);
+                const radius = gsap.utils.interpolate(0, 16, normalizedShrinkP);
+
+                gsap.set(heroImage, {
+                    width: `${width}vw`,
+                    height: `${height}vh`,
+                    borderRadius: `${radius}px`,
+                    y: normalizedShrinkP * -140 
+                });
+
+                // --- Phase 4: Text Exit Fade (0.8 to 0.95) ---
+                const copyFadeOutP = gsap.utils.clamp(0.82, 0.95, p);
+                const containerOpacityOut = 1 - ((copyFadeOutP - 0.82) / 0.13);
+
+                gsap.set(heroCopy, {
+                    opacity: containerOpacityIn * containerOpacityOut,
+                    y: normalizedShrinkP * 100,
+                    visibility: p > 0.18 && p < 0.98 ? 'visible' : 'hidden'
+                });
+
+                // --- Phase 5: Side Columns Parallax Drift & Color Shift (0.7 to 1.0) ---
+                const driftP = gsap.utils.clamp(0.7, 1.0, p);
+                const normalizedDriftP = (driftP - 0.7) / 0.3;
+
+                // Dynamic Color Shift (Applied to body)
+                document.body.style.backgroundColor = bgColorInterpolate(normalizedDriftP);
+                document.body.style.color = textColorInterpolate(normalizedDriftP);
+
+                gsap.set(".side-columns", {
+                    opacity: driftP > 0.7 ? (driftP - 0.7) / 0.15 : 0, 
+                    visibility: driftP > 0.7 ? 'visible' : 'hidden'
+                });
+
+                gsap.set("#col-1", { yPercent: -180 * normalizedDriftP });
+                gsap.set("#col-2", { yPercent: -220 * normalizedDriftP });
+                gsap.set("#col-3", { yPercent: -200 * normalizedDriftP });
+                gsap.set("#col-4", { yPercent: -240 * normalizedDriftP });
+            }
+        });
+
+        // 4. Interactive Photo Wall (Magnetic Hover)
+        const thumbnails = document.querySelectorAll('.thumbnail');
+        thumbnails.forEach(thumb => {
+            thumb.addEventListener('mousemove', (e) => {
+                const rect = thumb.getBoundingClientRect();
+                const x = e.clientX - rect.left; 
+                const y = e.clientY - rect.top;  
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const rotateX = ((y - centerY) / centerY) * -15; 
+                const rotateY = ((x - centerX) / centerX) * 15;
+                
+                gsap.to(thumb, {
+                    rotationX: rotateX,
+                    rotationY: rotateY,
+                    scale: 1.05,
+                    ease: 'power2.out',
+                    duration: 0.4
+                });
+            });
+            
+            thumb.addEventListener('mouseleave', () => {
+                gsap.to(thumb, {
+                    rotationX: 0,
+                    rotationY: 0,
+                    scale: 1,
+                    ease: 'power2.out',
+                    duration: 0.6
+                });
+            });
+        });
+
+        // 5. Stacked Cards Effect (Sticky Cards with Scale Down)
+        const stackedCards = gsap.utils.toArray('.stacked-card');
+        
+        stackedCards.forEach((card, i) => {
+            // We don't need to scale down the last card
+            if (i === stackedCards.length - 1) return;
+
+            // Animate the current card scaling down as the NEXT card covers it
+            gsap.to(card, {
+                scale: 0.9,
+                opacity: 0.3,
+                scrollTrigger: {
+                    trigger: card,
+                    start: "top 15vh", // When the current card hits the sticky position
+                    endTrigger: stackedCards[i + 1],
+                    end: "top 15vh", // When the next card hits the sticky position
+                    scrub: true,
+                }
+            });
+        });
+
+    </script>
+</body>
+</html>

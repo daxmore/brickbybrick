@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Works — Portfolio Reveal</title>
+    <link rel="stylesheet" href="../../assets/global-nav.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
+    <script src="../../assets/global-nav.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Inter:wght@400;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f2f2f2;
+            --text: #1a1a1a;
+            /* Your provided gradients */
+            --grad-warm: linear-gradient(220.55deg, #FFF6EB 0%, #DFD1C5 100%);
+            --grad-cool: linear-gradient(220.55deg, #DDE4FF 0%, #8DA2EE 100%);
+            --grad-dark: linear-gradient(220.55deg, #565656 0%, #181818 100%);
+            --grad-sunset: linear-gradient(220.55deg, #FFC328 0%, #E20000 100%);
+            --folder-gray: #d1d1d1;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            padding: 80px 4vw;
+            overflow-x: hidden;
+        }
+
+        /* Large Header Titles */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 100px;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .section-header h1 {
+            font-family: 'EB Garamond', serif;
+            font-size: clamp(4rem, 10vw, 8rem);
+            font-weight: 500;
+            letter-spacing: -0.03em;
+        }
+
+        .archive-title {
+            font-family: 'EB Garamond', serif;
+            font-size: clamp(3rem, 8vw, 6rem);
+            opacity: 0.15;
+            font-style: italic;
+        }
+
+        /* Portfolio Grid */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 1024px) {
+            .projects-grid { grid-template-columns: 1fr; gap: 120px; }
+        }
+
+        .project-folder {
+            position: relative;
+            width: 100%;
+            height: 280px; /* Slightly taller for bigger images */
+            cursor: pointer;
+            transition: opacity 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        /* Disabled State for siblings */
+        .project-folder.disabled {
+            opacity: 0.2;
+            filter: grayscale(1);
+        }
+
+        /* Folder Notch Design */
+        .folder-wrapper {
+            position: absolute;
+            inset: 0;
+            background: var(--folder-gray);
+            border-radius: 4px;
+            z-index: 2;
+            /* Notch at the top right */
+            clip-path: polygon(0% 0%, 75% 0%, 80% 15%, 100% 15%, 100% 100%, 0% 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 30px 40px;
+            transition: background 0.4s ease, transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .project-folder:nth-child(odd) .folder-wrapper { transform: translateX(-20px); }
+        .project-folder:nth-child(even) .folder-wrapper { transform: translateX(20px); }
+
+        .folder-info {
+            pointer-events: none;
+        }
+
+        .folder-number {
+            position: absolute;
+            top: 30px;
+            left: 40px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            opacity: 0.4;
+        }
+
+        .folder-category {
+            font-family: 'EB Garamond', serif;
+            font-size: clamp(2.5rem, 5vw, 4.5rem);
+            font-weight: 400;
+            letter-spacing: -0.02em;
+            line-height: 1;
+        }
+
+        /* Fan-out Images - Centered Implementation */
+        .preview-stack {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .preview-img {
+            position: absolute;
+            width: 300px; /* Bigger images */
+            height: 220px;
+            object-fit: cover;
+            border-radius: 12px;
+            box-shadow: 0 30px 70px rgba(0,0,0,0.4);
+            opacity: 0;
+            will-change: transform;
+            transform: translateY(50px) scale(0.9);
+        }
+
+        /* Color Variants */
+        .motion { --grad: var(--grad-warm); }
+        .branding { --grad: var(--grad-cool); }
+        .editorial { --grad: var(--grad-dark); color: #fff; }
+        .photo { --grad: var(--grad-sunset); }
+
+        .project-folder:hover .folder-wrapper {
+            background: var(--grad);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="section-header">
+        <h1>Works</h1>
+        <span class="archive-title">Archive</span>
+    </div>
+
+    <div class="projects-grid">
+        <!-- Project 1 -->
+        <div class="project-folder motion">
+            <div class="preview-stack">
+                <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800" class="preview-img">
+                <img src="https://images.unsplash.com/photo-1633167606207-d840b5070fc2?auto=format&fit=crop&q=80&w=800" class="preview-img">
+                <img src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=800" class="preview-img">
+            </div>
+            <div class="folder-wrapper">
+                <span class="folder-number">01</span>
+                <div class="folder-info">
+                    <h2 class="folder-category">motion</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project 2 -->
+        <div class="project-folder branding">
+            <div class="preview-stack">
+                <img src="https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&q=80&w=800" class="preview-img">
+                <img src="https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&q=80&w=800" class="preview-img">
+                <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=800" class="preview-img">
+            </div>
+            <div class="folder-wrapper">
+                <span class="folder-number">02</span>
+                <div class="folder-info">
+                    <h2 class="folder-category">branding</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project 3 -->
+        <div class="project-folder editorial">
+            <div class="preview-stack">
+                <img src="https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&q=80&w=800" class="preview-img">
+                <img src="https://images.unsplash.com/photo-1633167606207-d840b5070fc2?auto=format&fit=crop&q=80&w=800" class="preview-img">
+                <img src="https://images.unsplash.com/photo-1550439062-609e1531270e?auto=format&fit=crop&q=80&w=800" class="preview-img">
+            </div>
+            <div class="folder-wrapper">
+                <span class="folder-number">03</span>
+                <div class="folder-info">
+                    <h2 class="folder-category">editorial</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project 4 -->
+        <div class="project-folder photo">
+            <div class="preview-stack">
+                <img src="https://images.unsplash.com/photo-1515462277126-2dd0c162007a?auto=format&fit=crop&q=80&w=800" class="preview-img">
+                <img src="https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&q=80&w=800" class="preview-img">
+                <img src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=800" class="preview-img">
+            </div>
+            <div class="folder-wrapper">
+                <span class="folder-number">04</span>
+                <div class="folder-info">
+                    <h2 class="folder-category">photoworks</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        gsap.registerPlugin(Draggable);
+        initGlobalNav('../../');
+
+        const folders = document.querySelectorAll('.project-folder');
+
+        folders.forEach(folder => {
+            const wrapper = folder.querySelector('.folder-wrapper');
+            const images = folder.querySelectorAll('.preview-img');
+            
+            const tl = gsap.timeline({ paused: true });
+
+            tl.to(wrapper, {
+                y: -10,
+                duration: 0.4,
+                ease: "power2.out"
+            })
+            .to(images, {
+                opacity: 1,
+                scale: 1,
+                // Fan out around the center
+                y: (i) => -180 - (i * 40),
+                rotation: (i) => -15 + (i * 15),
+                x: (i) => (i - 1) * 60,
+                stagger: 0.08,
+                duration: 0.7,
+                ease: "back.out(1.7)"
+            }, "-=0.3");
+
+            folder.addEventListener('mouseenter', () => {
+                folders.forEach(f => {
+                    if (f !== folder) f.classList.add('disabled');
+                });
+                tl.play();
+            });
+
+            folder.addEventListener('mouseleave', () => {
+                folders.forEach(f => f.classList.remove('disabled'));
+                tl.reverse();
+            });
+        });
+    </script>
+</body>
+</html>

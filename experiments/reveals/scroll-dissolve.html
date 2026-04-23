@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organic Scroll Dissolve | Studio Reveal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Outfit:wght@600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../assets/global-nav.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
+    <script src="../../assets/global-nav.js"></script>
+    <style>
+        :root {
+            /* Muted Pastel Color Palette */
+            --soft-cream: #F5F1E8;
+            --muted-sage: #C8D8CC;
+            --pale-lavender: #D4C9E3;
+            --soft-blush: #E8D5D0;
+            --text-dark: #2a2a2a;
+            --font-main: 'Inter', sans-serif;
+            --font-heading: 'Outfit', sans-serif;
+            
+            /* Animation Controls */
+            --dissolve-progress: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--soft-cream);
+            color: var(--text-dark);
+            font-family: var(--font-main);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Smooth Scroll Helper */
+        html.lenis { height: auto; }
+        .lenis-smooth { scroll-behavior: auto !important; }
+
+        /* Nav */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            padding: 0 5vw;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: transparent;
+            z-index: 1000;
+        }
+
+        .nav-logo { font-family: var(--font-heading); font-size: 1.5rem; color: var(--text-dark); }
+        .nav-links { display: flex; gap: 3rem; font-weight: 500; font-size: 0.9rem; opacity: 0.6; }
+
+        /* Hero Container */
+        .hero {
+            position: relative;
+            width: 100%;
+            height: 400vh; /* Scroll progression space */
+            background-color: var(--soft-cream);
+        }
+
+        .sticky-wrapper {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--soft-cream);
+        }
+
+        /* Visual Layers */
+        .hero-image-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            /* High-performance hardware acceleration */
+            transform: translateZ(0);
+            will-change: filter, opacity;
+        }
+
+        .hero-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            /* The Grainy Dissolve Filter */
+            filter: url(#organicDissolve);
+        }
+
+        /* Narrative Layers */
+        .content-layer {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            padding: 0 5vw;
+            max-width: 900px;
+            transform: translateZ(0);
+        }
+
+        /* Initial Headline: Visible by Default */
+        .hero-headline {
+            font-family: var(--font-heading);
+            font-size: clamp(3rem, 8vw, 7rem);
+            line-height: 0.9;
+            letter-spacing: -3px;
+            color: var(--text-dark);
+            margin-bottom: 2rem;
+            /* Applying dissolve filter to text too */
+            filter: url(#organicDissolve);
+            will-change: transform, filter, opacity;
+        }
+
+        /* Quote Layer: Hidden by Default */
+        .quote-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 600px;
+            opacity: 0;
+            pointer-events: none;
+            text-align: center;
+        }
+
+        .reveal-quote {
+            font-size: 1.5rem;
+            font-style: italic;
+            font-weight: 400;
+            color: var(--text-dark);
+            line-height: 1.4;
+            opacity: 0.7;
+        }
+
+        .reveal-quote::before {
+            content: "“";
+            font-size: 4rem;
+            font-family: var(--font-heading);
+            display: block;
+            margin-bottom: -1rem;
+            opacity: 0.2;
+        }
+
+        /* Final Scroll Section */
+        .post-hero {
+            height: 100vh;
+            background: var(--muted-sage);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10vh 5vw;
+            z-index: 20;
+        }
+
+        .post-content {
+            max-width: 800px;
+            text-align: center;
+            font-size: 2rem;
+            line-height: 1.2;
+            color: white;
+        }
+
+        /* SVG Filters: The Performance-Optimized Engine */
+        .svg-filters {
+            position: absolute;
+            width: 0;
+            height: 0;
+            pointer-events: none;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SVG Filters: Optimized "Discrete Thresholding" for 60FPS -->
+    <svg class="svg-filters" aria-hidden="true" focusable="false">
+        <defs>
+            <filter id="organicDissolve" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+                <!-- 1. High-Performance Static Noise -->
+                <feTurbulence 
+                    type="fractalNoise" 
+                    baseFrequency="0.03" 
+                    numOctaves="2" 
+                    seed="10"
+                    result="noise" />
+                
+                <!-- 2. The Dissolve Controller -->
+                <!-- We animate the alpha channel table to create a high-contrast 'wipe' -->
+                <feComponentTransfer in="noise" result="threshold">
+                    <feFuncA id="dissolveTable" type="discrete" tableValues="1 1 1 1 1 1 1 1 1 1" />
+                </feComponentTransfer>
+
+                <!-- 3. Mask the content -->
+                <feComposite in="SourceGraphic" in2="threshold" operator="in" />
+            </filter>
+        </defs>
+    </svg>
+
+    <!-- Legacy Nav Removed -->
+
+    <section class="hero">
+        <div class="sticky-wrapper" id="stickyStage">
+            
+            <div class="hero-image-container">
+                <img src="../../assets/images/hero-dissolve.png" class="hero-image" alt="Architectural Pastel">
+            </div>
+
+            <div class="content-layer" id="headlineStage">
+                <h1 class="hero-headline">Creating Organic Digital Landscapes.</h1>
+            </div>
+
+            <div class="quote-container" id="quoteStage">
+                <p class="reveal-quote">
+                    Minimalism is not a lack of something. It's simply the perfect amount of everything.
+                </p>
+            </div>
+
+        </div>
+    </section>
+
+    <section class="post-hero">
+        <div class="post-content">
+            <p>True luxury lies in the subtraction of the unnecessary.</p>
+        </div>
+    </section>
+
+    <!-- Dependencies moved to head for standardization -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js"></script>
+
+    <script>
+        // --- 1. INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            gsap.registerPlugin(ScrollTrigger, Draggable);
+            initGlobalNav('../../');
+
+            // Smooth Scroll (Lenis)
+            const lenis = new Lenis({
+                lerp: 0.1,
+                smoothWheel: true
+            });
+
+            function raf(time) {
+                lenis.raf(time);
+                requestAnimationFrame(raf);
+            }
+            requestAnimationFrame(raf);
+
+            // Fetch the SVG Filter element
+            const dissolveTable = document.getElementById('dissolveTable');
+
+            // --- 2. NARRATIVE TIMELINE ---
+            const tl = gsap.timeline({
+                scrollTrigger: {
+                    trigger: ".hero",
+                    start: "top top",
+                    end: "bottom bottom",
+                    scrub: 1, // High scrub for momentum
+                    pin: false
+                }
+            });
+
+            // PHASE A: INITIAL HEADLINE DESTRUCTION (0% - 40%)
+            // We animate a 'progress' value to update the SVG table
+            const animObj = { progress: 1 };
+            
+            tl.to(animObj, {
+                progress: 0,
+                duration: 1,
+                ease: "none",
+                onUpdate: () => {
+                    // Optimized Table Update
+                    // As progress drops, the '1' values in the table shift to '0'
+                    const steps = 15;
+                    const table = Array(steps).fill(0).map((_, i) => (i / steps < animObj.progress ? 1 : 0)).join(" ");
+                    dissolveTable.setAttribute('tableValues', table);
+                }
+            }, 0);
+
+            // Subtle parallax for headline
+            tl.to("#headlineStage", {
+                y: -50,
+                opacity: 0,
+                scale: 0.95,
+                duration: 0.6,
+                ease: "power2.in"
+            }, 0.2);
+
+            // PHASE B: REVEAL QUOTE (40% - 100%)
+            // The quote emerges as everything else dissolves
+            tl.to("#quoteStage", {
+                opacity: 1,
+                y: -30,
+                duration: 0.5,
+                pointerEvents: "auto",
+                ease: "power2.out"
+            }, 0.5);
+
+            // Image Zoom for Depth
+            tl.to(".hero-image", {
+                scale: 1.1,
+                duration: 1.5,
+                ease: "none"
+            }, 0);
+
+            // Final Fade of the image (to clean cream)
+            tl.to(".hero-image-container", {
+                opacity: 0.1, // Leave a ghost of the image
+                duration: 1,
+                ease: "none"
+            }, 0.5);
+
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../assets/global-nav.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="../../assets/global-nav.js"></script>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --text-white: #ffffff;
+            --text-dark: #1a1a1a;
+            --color-gray: #b0b0b0;
+            --color-red: #e52b20;
+            --color-black: #151515;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-white);
+            overflow-x: hidden;
+        }
+
+        #bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1.5px, transparent 1.5px);
+            background-size: 40px 40px;
+            will-change: transform;
+            transform-origin: center center;
+        }
+
+        /* Spacers to allow scrolling */
+        .spacer {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.2);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+        }
+
+        /* Structural Setup & 3D Environment */
+        .pinned-section {
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .card-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0px;
+            /* scale removed to prevent height shifting */
+            transform-style: preserve-3d;
+            will-change: transform, gap;
+        }
+
+        .card-wrapper {
+            width: 25vw;
+            max-width: 300px;
+            aspect-ratio: 5 / 7;
+            perspective: 2000px;
+        }
+
+        .card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            will-change: transform;
+            border-radius: 0px;
+        }
+
+        .card-face {
+            position: absolute;
+            inset: 0;
+            backface-visibility: hidden;
+            border-radius: inherit;
+            overflow: hidden;
+            will-change: transform, border-radius;
+        }
+
+        /* Slicing the single source image */
+        .card-front {
+            background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2000&auto=format&fit=crop');
+            background-size: 300% 100%;
+            background-repeat: no-repeat;
+            transform: scale(1.01) translateZ(1px); 
+        }
+
+        .card-wrapper:nth-child(1) .card-front { background-position: 0% 50%; }
+        .card-wrapper:nth-child(2) .card-front { background-position: 50% 50%; }
+        .card-wrapper:nth-child(3) .card-front { background-position: 100% 50%; }
+
+        /* Card Back Designs matching the reference image */
+        .card-back {
+            transform: rotateY(180deg) translateZ(1px);
+            display: flex;
+            flex-direction: column;
+            padding: 2.5rem;
+            text-align: left;
+            /* position: relative; removed to maintain absolute positioning from .card-face */
+            /* Noise texture overlay */
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.1'/%3E%3C/svg%3E");
+        }
+
+        .card-wrapper:nth-child(1) .card-back { background-color: var(--color-gray); color: var(--text-dark); }
+        .card-wrapper:nth-child(2) .card-back { background-color: var(--color-red); color: var(--text-white); }
+        .card-wrapper:nth-child(3) .card-back { background-color: var(--color-black); color: var(--text-white); }
+
+        .card-icon {
+            width: 32px;
+            height: 32px;
+            margin-bottom: auto;
+        }
+
+        .card-back h3 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 2rem;
+            letter-spacing: -0.02em;
+        }
+
+        .card-back p {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            opacity: 0.8;
+            font-weight: 400;
+        }
+
+        /* Icon SVGs */
+        svg.icon { width: 100%; height: 100%; fill: currentColor; }
+    </style>
+</head>
+<body>
+
+    <div id="bg-grid"></div>
+    <div class="spacer">Scroll to start</div>
+
+    <section class="pinned-section" id="animation-container">
+        <div class="card-container">
+            <div class="card-wrapper">
+                <div class="card">
+                    <div class="card-face card-front"></div>
+                    <div class="card-face card-back">
+                        <div class="card-icon">
+                            <svg class="icon" viewBox="0 0 24 24"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>
+                        </div>
+                        <h3>Going<br/>Zero to One</h3>
+                        <p>If you're navigating a new business unit, or a new venture entirely, or breaking into a new market</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-wrapper">
+                <div class="card">
+                    <div class="card-face card-front"></div>
+                    <div class="card-face card-back">
+                        <div class="card-icon">
+                            <svg class="icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                        </div>
+                        <h3>Scaling from<br/>One to N</h3>
+                        <p>If you've achieved Product/Service Market Fit, and are looking to scale your business to new heights</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-wrapper">
+                <div class="card">
+                    <div class="card-face card-front"></div>
+                    <div class="card-face card-back">
+                        <div class="card-icon">
+                            <svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        </div>
+                        <h3>Need Quick<br/>Solutions</h3>
+                        <p>If you know exactly what you want and need a team that can step in and quickly help you with it</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="spacer">Scroll to end</div>
+
+    <!-- Dependencies moved to head -->
+    <script>
+        gsap.registerPlugin(ScrollTrigger, Draggable);
+        initGlobalNav('../../');
+
+        // Set initial state — cards start slightly below and transparent for a smooth entrance
+        gsap.set(".card-container", { opacity: 0, y: 60 });
+
+        const tl = gsap.timeline({
+            scrollTrigger: {
+                trigger: "#animation-container",
+                start: "top top",
+                end: "+=300%", // Longer scroll = more breathing room per phase
+                scrub: 0.8,   // Smooth interpolation instead of frame-snapping
+                pin: true,
+                anticipatePin: 1
+            }
+        });
+
+        // Phase 0: Smooth Entrance (fade in + rise up)
+        tl.to(".card-container", { opacity: 1, y: 0, duration: 1.5, ease: "power2.out" }, 0);
+
+        // Phase 1: Separate cards + round corners
+        tl.to(".card-container", { gap: "2rem", duration: 2, ease: "power1.inOut" }, 1)
+          .to(".card", { borderRadius: "1.2rem", duration: 1.5, ease: "power1.inOut" }, 1)
+          .to("#bg-grid", { scale: 3, duration: 6, ease: "none" }, 0);
+
+        // Phase 2: Fan Out (gentle rotation)
+        tl.to(".card-wrapper:nth-child(1)", { rotateZ: -8, x: -20, duration: 1.5, ease: "power2.out" }, 2.5)
+          .to(".card-wrapper:nth-child(3)", { rotateZ: 8, x: 20, duration: 1.5, ease: "power2.out" }, 2.5);
+
+        // Phase 3: Flip All (with a soft stagger)
+        tl.to(".card", {
+            rotateY: 180,
+            duration: 2.5,
+            stagger: 0.1,
+            ease: "power2.inOut"
+        }, 4);
+
+        // Phase 4: Hold — empty space so the user can read the card backs before unpin
+        // (the timeline just "sits" here for 1 unit of scroll)
+
+    </script>
+</body>
+</html>

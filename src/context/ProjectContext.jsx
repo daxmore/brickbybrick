@@ -11,6 +11,7 @@ const DEFAULT_STYLES = {
   fontSize: "16px",
   fontFamily: "'Noto Sans', sans-serif",
   sectionPadding: "60px",
+  contentGap: "32px",
   navBg: "#ffffff",
   footerBg: "#1c1c1e"
 };
@@ -159,6 +160,13 @@ export const ProjectProvider = ({ children }) => {
     });
   };
 
+  const setBlocks = (newBlocks) => {
+    setCurrentPage(prev => ({
+      ...prev,
+      blocks: newBlocks
+    }));
+  };
+
   const loadPage = (id) => {
     const page = pages.find(p => p.id === id);
     if (page) {
@@ -181,6 +189,32 @@ export const ProjectProvider = ({ children }) => {
     }
   };
 
+  const renamePage = (id, newName) => {
+    const updatedPages = pages.map(p => p.id === id ? { ...p, name: newName } : p);
+    setPages(updatedPages);
+    localStorage.setItem('builder_pages', JSON.stringify(updatedPages));
+    if (currentPage.id === id) {
+      setCurrentPage(prev => ({ ...prev, name: newName }));
+    }
+  };
+
+  const duplicatePage = (id) => {
+    const pageToDuplicate = pages.find(p => p.id === id);
+    if (!pageToDuplicate) return;
+
+    const newId = `page_${Date.now()}`;
+    const duplicatedPage = {
+      ...pageToDuplicate,
+      id: newId,
+      name: `${pageToDuplicate.name} (Copy)`,
+      createdAt: new Date().toISOString()
+    };
+
+    const updatedPages = [...pages, duplicatedPage];
+    setPages(updatedPages);
+    localStorage.setItem('builder_pages', JSON.stringify(updatedPages));
+  };
+
   const exportPageAsJSON = () => {
     const blob = new Blob(
       [JSON.stringify(currentPage, null, 2)],
@@ -198,9 +232,16 @@ export const ProjectProvider = ({ children }) => {
     reader.onload = (e) => {
       try {
         const imported = JSON.parse(e.target.result);
-        setCurrentPage(imported);
+        const validatedPage = {
+          ...imported,
+          id: imported.id || `imported_${Date.now()}`,
+          name: imported.name || 'Imported Page'
+        };
+        setCurrentPage(validatedPage);
         setActiveView('canvas');
+        // The auto-save useEffect will handle adding it to the pages list
       } catch (err) {
+        alert("Failed to parse JSON file. Please ensure it's a valid Chameleon export.");
         console.error("Failed to parse JSON file", err);
       }
     };
@@ -224,6 +265,8 @@ export const ProjectProvider = ({ children }) => {
       savePage,
       loadPage,
       deletePage,
+      renamePage,
+      duplicatePage,
       exportPageAsJSON,
       importPageFromJSON,
       deviceView,
@@ -236,7 +279,8 @@ export const ProjectProvider = ({ children }) => {
       addBlock,
       deleteBlock,
       reorderBlocks,
-      duplicateBlock
+      duplicateBlock,
+      setBlocks
     }}>
       {children}
     </ProjectContext.Provider>
@@ -245,3 +289,4 @@ export const ProjectProvider = ({ children }) => {
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const useProject = () => useContext(ProjectContext);
+= () => useContext(ProjectContext);

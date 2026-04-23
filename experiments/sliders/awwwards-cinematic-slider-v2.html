@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cinematic Slider V2 | Final Production</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <link rel="stylesheet" href="../../assets/global-nav.css">
+    <script src="../../assets/global-nav.js"></script>
+    <script src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js"></script>
+    <script src="https://unpkg.com/split-type"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@900&family=Space+Mono&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-dark: #000000;
+            --text-light: #ffffff;
+            --font-main: 'Inter', sans-serif;
+            --font-mono: 'Space Mono', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        main { cursor: none; }
+        
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* 1. Custom Cursor WITH Text */
+        .custom-cursor {
+            position: fixed;
+            top: 0; left: 0;
+            width: 10px; height: 10px;
+            background-color: #fff;
+            border-radius: 50%;
+            z-index: 9999;
+            pointer-events: none;
+            mix-blend-mode: difference;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .cursor-text {
+            color: #000;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 900;
+            opacity: 0;
+            white-space: nowrap;
+        }
+
+
+
+        /* Intro/Outro */
+        .intro, .outro {
+            height: 100vh;
+            display: flex;
+            align-items: center; justify-content: center;
+            background: var(--bg-dark);
+            position: relative; z-index: 10;
+        }
+        .intro h2, .outro h2 {
+            font-size: 1rem; opacity: 0.3; letter-spacing: 0.5rem; text-transform: uppercase;
+        }
+
+        /* Slider Section */
+        .slider {
+            position: relative;
+            height: 100vh;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        /* 2. Image Parallax Architecture */
+        .slider-images {
+            position: absolute; inset: 0; z-index: 1;
+        }
+        .slider-images::after {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(90deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 60%, transparent 100%);
+            z-index: 5;
+        }
+
+        .parallax-wrapper {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            opacity: 0; overflow: hidden; will-change: opacity;
+        }
+
+        .slide-img-el {
+            position: absolute;
+            width: 100%; height: 120%; /* Extra height for Y parallax */
+            top: -10%; left: 0;
+            object-fit: cover;
+            will-change: transform;
+        }
+
+        /* 3. Title Architecture */
+        .slider-titles {
+            position: absolute;
+            left: 8%; top: 50%;
+            transform: translateY(-50%);
+            z-index: 10; width: 80%;
+        }
+        .slide-title-el {
+            position: absolute; top: 50%; left: 0;
+            transform: translateY(-50%); opacity: 0; width: 100%;
+        }
+        .slide-title-el h1 {
+            font-size: clamp(2.5rem, 10vw, 8.5rem);
+            text-transform: uppercase; letter-spacing: -0.2rem; line-height: 0.85;
+        }
+
+        .line-mask { overflow: hidden; display: block; }
+        .char { display: inline-block; will-change: transform; }
+
+        /* UI Elements */
+        .slider-indicator {
+            position: absolute; right: 50px; top: 50%;
+            transform: translateY(-50%); z-index: 20;
+            display: flex; align-items: center; gap: 25px;
+        }
+        .slider-indices {
+            display: flex; flex-direction: column; gap: 20px;
+            font-family: var(--font-mono); font-size: 0.7rem; align-items: flex-end;
+        }
+        .index-item {
+            display: flex; align-items: center; gap: 15px; opacity: 0.3;
+            transition: transform 0.3s ease, opacity 0.3s;
+        }
+        .index-item:hover { transform: scale(1.2); opacity: 1 !important; }
+        .index-marker {
+            width: 15px; height: 1px; background: #fff;
+            transform: scaleX(0); transform-origin: right;
+        }
+        .slider-progress-bar {
+            width: 1px; height: 200px; background: rgba(255,255,255,0.1); position: relative;
+        }
+        .slider-progress {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff; transform: scaleY(0); transform-origin: top;
+        }
+
+        @media (max-width: 768px) {
+            * { cursor: auto; }
+            .custom-cursor { display: none; }
+            nav { padding: 20px; }
+            .slider-titles { left: 5%; width: 90%; }
+            .slider-indicator { right: 20px; }
+        }
+
+        html.lenis, html.lenis body { height: auto; }
+        .lenis.lenis-smooth { scroll-behavior: auto !important; }
+    </style>
+</head>
+<body>
+
+    <div class="custom-cursor" id="cursor"><span class="cursor-text">EXPLORE</span></div>
+
+
+
+    <main>
+        <section class="intro"><h2>SCROLL TO INITIATE</h2></section>
+
+        <section class="slider" id="slider-pinned">
+            <div class="slider-images" id="image-container"></div>
+            <div class="slider-titles" id="title-container"></div>
+            
+            <div class="slider-indicator">
+                <div class="slider-indices" id="indices-container"></div>
+                <div class="slider-progress-bar">
+                    <div class="slider-progress" id="progress-fill"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="outro"><h2>SYSTEM CONCLUDED</h2></section>
+    </main>
+
+    <script>
+        const slides = [
+            { title: "Architectural Voids", image: "https://images.unsplash.com/photo-1773332585956-2d0e8ac80cb6?auto=format&w=1920" },
+            { title: "Ethereal Landscapes", image: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&w=1920" },
+            { title: "Timeless Textures", image: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&w=1920" },
+            { title: "Urban Symmetry", image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&w=1920" },
+            { title: "Infinite Horizons", image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&w=1920" }
+        ];
+
+        let lenis, masterTl;
+        const sliderSection = document.getElementById('slider-pinned');
+        const cursor = document.getElementById('cursor');
+        const cursorText = cursor.querySelector('.cursor-text');
+
+        function init() {
+            gsap.registerPlugin(ScrollTrigger, Draggable);
+            initGlobalNav('../../');
+
+            lenis = new Lenis({ lerp: 0.1 });
+            lenis.on('scroll', ScrollTrigger.update);
+            gsap.ticker.add((time) => lenis.raf(time * 1000));
+
+            renderSlides();
+            setupCursor();
+            setupMasterTimeline();
+        }
+
+        function renderSlides() {
+            const imgContainer = document.getElementById('image-container');
+            const titleContainer = document.getElementById('title-container');
+            const indicesContainer = document.getElementById('indices-container');
+
+            slides.forEach((slide, i) => {
+                // Pre-render Images
+                const wrap = document.createElement('div');
+                wrap.className = 'parallax-wrapper';
+                const img = document.createElement('img');
+                img.src = slide.image;
+                img.className = 'slide-img-el';
+                wrap.appendChild(img);
+                imgContainer.appendChild(wrap);
+
+                // Pre-render Titles
+                const titleWrapper = document.createElement('div');
+                titleWrapper.className = 'slide-title-el';
+                titleWrapper.innerHTML = `<h1>${slide.title}</h1>`;
+                titleContainer.appendChild(titleWrapper);
+
+                const split = new SplitType(titleWrapper.querySelector('h1'), { types: 'lines, chars' });
+                split.lines.forEach(line => {
+                    const mask = document.createElement('div');
+                    mask.className = 'line-mask';
+                    line.parentNode.insertBefore(mask, line);
+                    mask.appendChild(line);
+                });
+
+                // Title Character Hover
+                const chars = titleWrapper.querySelectorAll('.char');
+                titleWrapper.querySelector('h1').addEventListener('mouseenter', () => {
+                    gsap.to(chars, { y: -10, yoyo: true, repeat: 1, stagger: 0.02, duration: 0.2 });
+                });
+
+                // Interactive Indices
+                const indexNum = (i + 1).toString().padStart(2, '0');
+                const p = document.createElement('p');
+                p.className = 'index-item';
+                p.innerHTML = `<span class="index-marker"></span><span>${indexNum}</span>`;
+                p.addEventListener('click', () => {
+                    const pinDistance = window.innerHeight * slides.length;
+                    const targetScroll = sliderSection.offsetTop + (i * (pinDistance / slides.length));
+                    lenis.scrollTo(targetScroll, { duration: 1.2 });
+                });
+                indicesContainer.appendChild(p);
+            });
+        }
+
+        function setupCursor() {
+            const xTo = gsap.quickTo(cursor, "left", { duration: 0.4, ease: "power3" });
+            const yTo = gsap.quickTo(cursor, "top", { duration: 0.4, ease: "power3" });
+
+            window.addEventListener('mousemove', (e) => {
+                xTo(e.clientX - cursor.offsetWidth / 2);
+                yTo(e.clientY - cursor.offsetHeight / 2);
+            });
+
+            const imgContainer = document.getElementById('image-container');
+            imgContainer.addEventListener('mouseenter', () => {
+                gsap.to(cursor, { width: 80, height: 80, duration: 0.3 });
+                gsap.to(cursorText, { opacity: 1, duration: 0.3 });
+            });
+            imgContainer.addEventListener('mouseleave', () => {
+                gsap.to(cursor, { width: 10, height: 10, duration: 0.3 });
+                gsap.to(cursorText, { opacity: 0, duration: 0.3 });
+            });
+        }
+
+        function setupMasterTimeline() {
+            const pinDistance = window.innerHeight * slides.length;
+            masterTl = gsap.timeline({
+                scrollTrigger: {
+                    trigger: ".slider",
+                    start: "top top",
+                    end: () => "+=" + pinDistance,
+                    pin: true,
+                    scrub: 0.5,
+                    invalidateOnRefresh: true
+                }
+            });
+
+            // Set Initial Slide
+            gsap.set(".parallax-wrapper:nth-child(1)", { opacity: 1 });
+            gsap.set(".slide-img-el:nth-child(1)", { yPercent: 10 });
+            gsap.set(".slide-title-el:nth-child(1)", { opacity: 1 });
+            gsap.set(".index-item:nth-child(1)", { opacity: 1 });
+            gsap.set(".index-item:nth-child(1) .index-marker", { scaleX: 1 });
+
+            slides.forEach((_, i) => {
+                const pos = i;
+                const next = i + 1;
+
+                // 1. GLOBAL PROGRESS
+                masterTl.to("#progress-fill", { scaleY: (i + 1) / slides.length, ease: "none", duration: 1 }, pos);
+
+                // 2. IMAGE PARALLAX (Continuous through slide's lifecycle)
+                masterTl.fromTo(`.parallax-wrapper:nth-child(${i+1}) .slide-img-el`, 
+                    { yPercent: 10 }, { yPercent: -10, ease: "none", duration: 1 }, pos);
+
+                if (i < slides.length - 1) {
+                    // 3. TRANSITION TO NEXT
+                    // Fade out current text
+                    masterTl.to(`.slide-title-el:nth-child(${i+1}) .line`, 
+                        { y: -60, opacity: 0, stagger: 0.02, ease: "none", duration: 0.4 }, pos + 0.6);
+                    
+                    masterTl.to(`.index-item:nth-child(${i+1})`, { opacity: 0.3, duration: 0.2 }, pos + 0.8);
+                    masterTl.to(`.index-item:nth-child(${i+1}) .index-marker`, { scaleX: 0, duration: 0.2 }, pos + 0.8);
+
+                    // Fade in next image
+                    masterTl.to(`.parallax-wrapper:nth-child(${next+1})`, 
+                        { opacity: 1, ease: "none", duration: 0.5 }, pos + 0.8);
+
+                    // Reveal next text
+                    masterTl.set(`.slide-title-el:nth-child(${next+1})`, { opacity: 1 }, pos + 0.9);
+                    masterTl.fromTo(`.slide-title-el:nth-child(${next+1}) .line`, 
+                        { y: 100 }, { y: 0, stagger: 0.03, ease: "none", duration: 0.6 }, pos + 0.9);
+
+                    masterTl.to(`.index-item:nth-child(${next+1})`, { opacity: 1, duration: 0.2 }, pos + 0.9);
+                    masterTl.to(`.index-item:nth-child(${next+1}) .index-marker`, { scaleX: 1, duration: 0.2 }, pos + 0.9);
+                }
+            });
+        }
+
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Mood Layouts with GSAP Flip</title>
+    <link rel="stylesheet" href="../../assets/global-nav.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Flip.min.js"></script>
+    <script src="../../assets/global-nav.js"></script>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --text-color: #333;
+            --primary-color: #4a90e2;
+            --card-bg: #ffffff;
+            --card-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            --border-radius: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            padding: 3rem 1rem 2rem;
+            z-index: 10;
+            position: relative;
+        }
+
+        h1 {
+            margin-bottom: 1.5rem;
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: #1a202c;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 0.8rem 1.8rem;
+            border: none;
+            border-radius: 30px;
+            background-color: var(--card-bg);
+            color: #4a5568;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            outline: none;
+        }
+
+        button:hover {
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+            color: #2d3748;
+        }
+
+        button.active {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.2);
+        }
+
+        .container {
+            flex-grow: 1;
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            overflow: hidden;
+            min-height: 700px; /* Ensure enough height for top percentages */
+        }
+
+        .item {
+            position: absolute;
+            width: 260px;
+            height: 360px;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2d3748;
+            /* Set transform origin to center for predictable rotations */
+            transform-origin: center center;
+            /* Will-change for performance optimization */
+            will-change: transform;
+            user-select: none;
+        }
+
+        /* Add varied styling to the cards for better visual distinction */
+        .card-1 { border-top: 8px solid #ff6b6b; }
+        .card-2 { border-top: 8px solid #4ecdc4; }
+        .card-3 { border-top: 8px solid #45b7d1; }
+        .card-4 { border-top: 8px solid #f9ca24; }
+        .card-5 { border-top: 8px solid #6ab04c; }
+        .card-6 { border-top: 8px solid #e056fd; }
+
+        @media (max-width: 768px) {
+            .item {
+                width: 160px;
+                height: 220px;
+                font-size: 1.2rem;
+            }
+            
+            .container {
+                min-height: 500px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Select a Mood</h1>
+        <div class="controls">
+            <button id="btn-chaos">Chaos</button>
+            <button id="btn-cleanup">Cleanup</button>
+            <button id="btn-notebook">Notebook</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="item card-1">
+            <div class="content">Card 1</div>
+        </div>
+        <div class="item card-2">
+            <div class="content">Card 2</div>
+        </div>
+        <div class="item card-3">
+            <div class="content">Card 3</div>
+        </div>
+        <div class="item card-4">
+            <div class="content">Card 4</div>
+        </div>
+        <div class="item card-5">
+            <div class="content">Card 5</div>
+        </div>
+        <div class="item card-6">
+            <div class="content">Card 6</div>
+        </div>
+    </main>
+
+    <!-- GSAP core and Flip plugin moved to head -->
+    <script>
+        gsap.registerPlugin(Flip, Draggable);
+        initGlobalNav('../../');
+
+        // 1. Organize Data: Layout definitions in a single object
+        // Percentages ensure responsiveness relative to the container size
+        const layouts = {
+            chaos: [
+                { left: '15%', top: '25%', rotation: -22 },
+                { left: '80%', top: '20%', rotation: 18 },
+                { left: '25%', top: '75%', rotation: 25 },
+                { left: '85%', top: '70%', rotation: -15 },
+                { left: '55%', top: '82%', rotation: 8 },
+                { left: '45%', top: '15%', rotation: -12 },
+            ],
+            cleanup: [
+                { left: '20%', top: '30%', rotation: 0 },
+                { left: '50%', top: '30%', rotation: 0 },
+                { left: '80%', top: '30%', rotation: 0 },
+                { left: '20%', top: '75%', rotation: 0 },
+                { left: '50%', top: '75%', rotation: 0 },
+                { left: '80%', top: '75%', rotation: 0 },
+            ],
+            notebook: [
+                { left: '50%', top: '55%', rotation: -12 },
+                { left: '50%', top: '55%', rotation: 7 },
+                { left: '50%', top: '55%', rotation: -5 },
+                { left: '50%', top: '55%', rotation: 9 },
+                { left: '50%', top: '55%', rotation: -3 },
+                { left: '50%', top: '55%', rotation: 0 }, // Top card straight
+            ]
+        };
+
+        const items = gsap.utils.toArray('.item');
+        let currentMode = 'notebook'; // Set initial mode
+        let isAnimating = false;
+
+        // Function to apply layout instantly (used for initialization)
+        function setInitialLayout(mode) {
+            const layout = layouts[mode];
+            items.forEach((item, index) => {
+                const config = layout[index];
+                // Center the items on their coordinates and apply the initial state
+                gsap.set(item, {
+                    left: config.left,
+                    top: config.top,
+                    xPercent: -50,
+                    yPercent: -50,
+                    rotation: config.rotation
+                });
+            });
+        }
+
+        // 2. Core Logic: Use Flip to animate between layout states
+        function animateToLayout(mode) {
+            if (currentMode === mode || isAnimating) return;
+            isAnimating = true;
+            
+            const layout = layouts[mode];
+            
+            // Step A: Capture the current layout state
+            // We explicitly tell Flip to track rotation since it's inline
+            const state = Flip.getState(items, { props: "rotation" });
+
+            // Step B: Update the CSS to the new configuration
+            items.forEach((item, index) => {
+                const config = layout[index];
+                gsap.set(item, {
+                    left: config.left,
+                    top: config.top,
+                    rotation: config.rotation
+                });
+            });
+
+            // Step C: Animate smoothly from the captured state to the new configuration
+            Flip.from(state, {
+                duration: 1.2,
+                ease: "power3.inOut",
+                stagger: 0.08, // Dynamic 'ripple' effect
+                spin: true, // Interpolate rotation efficiently
+                absolute: true, // Handle elements that are absolutely positioned
+                onComplete: () => {
+                    currentMode = mode;
+                    isAnimating = false;
+                }
+            });
+            
+            // Update active button UI
+            document.querySelectorAll('.controls button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${mode}`).classList.add('active');
+        }
+
+        // Event Listeners for Buttons
+        document.getElementById('btn-chaos').addEventListener('click', () => animateToLayout('chaos'));
+        document.getElementById('btn-cleanup').addEventListener('click', () => animateToLayout('cleanup'));
+        document.getElementById('btn-notebook').addEventListener('click', () => animateToLayout('notebook'));
+
+        // Initialize the starting layout
+        setInitialLayout(currentMode);
+        document.getElementById(`btn-${currentMode}`).classList.add('active');
+
+        // 3. Technical Specs: Window resize event listener
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            // Debounce to prevent performance issues during continuous resizing
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                // Because we used percentage-based positioning, the browser handles 
+                // most of the responsive reflow naturally.
+                // Re-applying the current layout logic ensures any edge-cases with GSAP's 
+                // internal matrix values stay perfectly aligned to percentages.
+                if (!isAnimating) {
+                    setInitialLayout(currentMode);
+                }
+            }, 200);
+        });
+    </script>
+</body>
+</html>

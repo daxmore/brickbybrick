@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diagonal Swoop Preloader | UI Lab</title>
+
+  <!-- Google Font: Outfit for bold, modern typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet" />
+
+  <!-- GSAP CDN (free core version only) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <style>
+    /* ============================================================
+       CSS RESET & BASE
+    ============================================================ */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      /* Pastel palette tokens */
+      --color-page-bg:     #F5F2E8; /* Vanilla Haze — warm off-white hero bg */
+      --color-preload-bg:  #1a1a1a; /* Near-black overlay */
+      --color-heading:     #1a1a1a;
+      --color-sub:         #B0ACA8; /* Warm Gray */
+      --color-accent:      #C8A8F5; /* Electric Lavender */
+      --color-tag-bg:      #E8D5D0; /* Soft Blush */
+      --color-tag-text:    #1a1a1a;
+
+      --font-main: 'Outfit', sans-serif;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden; /* Prevent scroll while preloader runs */
+      font-family: var(--font-main);
+      background: var(--color-page-bg);
+    }
+
+    /* ============================================================
+       HERO PAGE — revealed beneath the preloader
+    ============================================================ */
+    .hero {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      background: var(--color-page-bg);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      padding: clamp(2rem, 7vw, 8rem);
+      overflow: hidden;
+    }
+
+    /* Large decorative background word */
+    .hero-bg-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: clamp(10rem, 22vw, 26rem);
+      font-weight: 900;
+      color: rgba(0, 0, 0, 0.03);
+      text-transform: uppercase;
+      letter-spacing: -0.06em;
+      line-height: 0.85;
+      user-select: none;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 1rem;
+      background: var(--color-tag-bg);
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-tag-text);
+      margin-bottom: 2rem;
+      opacity: 0; /* animated in after preloader */
+    }
+
+    .hero-heading {
+      font-size: clamp(2.8rem, 6.5vw, 7rem);
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      color: var(--color-heading);
+      text-transform: uppercase;
+      max-width: 14ch;
+      opacity: 0; /* animated in after preloader */
+    }
+
+    .hero-heading em {
+      font-style: normal;
+      color: var(--color-accent);
+    }
+
+    .hero-sub {
+      margin-top: 2rem;
+      font-size: clamp(0.9rem, 1.6vw, 1.15rem);
+      font-weight: 300;
+      color: var(--color-sub);
+      max-width: 44ch;
+      line-height: 1.8;
+      opacity: 0; /* animated in after preloader */
+    }
+
+    /* Horizontal rule accent below heading */
+    .hero-rule {
+      width: 60px;
+      height: 2px;
+      background: var(--color-accent);
+      margin-top: 2.5rem;
+      opacity: 0;
+    }
+
+    /* Bottom-right image cluster landing zone — visual hint */
+    .hero-corner-hint {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 320px;
+      /* aspect-ratio matches fly-img so the stack lands perfectly */
+      aspect-ratio: 16/9;
+      border-radius: 8px;
+      border: 1px dashed rgba(0,0,0,0.08);
+      pointer-events: none;
+    }
+
+    /* ============================================================
+       PRELOADER WRAPPER — fixed on top of everything
+       pointer-events: none so clicks pass through if needed later.
+    ============================================================ */
+    .preloader {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    /* ============================================================
+       PRELOADER BACKGROUND — the dark wipe panel
+       Animates height: 100% → 0% to reveal the hero below.
+    ============================================================ */
+    .preloader-bg {
+      position: fixed;             /* Independent full-viewport coverage */
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      background: var(--color-preload-bg);
+      transform-origin: top center;
+    }
+
+    /* ============================================================
+       IMAGES CONTAINER — anchored top-left
+       All images are stacked at position: absolute top:20 left:20
+    ============================================================ */
+    .images-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      /* Overflow visible so images can fly across the full screen */
+      overflow: visible;
+    }
+
+    /* ============================================================
+       FLYING IMAGES
+       All stacked on top of each other at top-left.
+       will-change: transform for GPU compositing (smooth animation).
+    ============================================================ */
+    .fly-img {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 320px;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      border-radius: 8px;
+      will-change: transform;         /* Hints browser to prep GPU layer */
+      /* GSAP sets scale: 0 in JS init — starts invisible */
+      transform: scale(0);
+      box-shadow:
+        0 8px 20px rgba(0,0,0,0.25),
+        0 2px 6px rgba(0,0,0,0.15);
+    }
+
+    /* ============================================================
+       RESPONSIVE ADJUSTMENTS
+    ============================================================ */
+
+    /* Tablet */
+    @media (max-width: 768px) {
+      .fly-img {
+        width: 220px; /* Smaller images on tablet */
+      }
+
+      .hero-corner-hint {
+        width: 220px;
+      }
+    }
+
+    /* Mobile */
+    @media (max-width: 480px) {
+      .fly-img {
+        width: 160px;
+      }
+
+      .hero-corner-hint {
+        width: 160px;
+      }
+
+      .hero {
+        padding: 2rem 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       HERO — the actual page content revealed after preloader
+  ============================================================ -->
+  <main class="hero" id="hero" aria-label="Main content">
+    <span class="hero-bg-text" aria-hidden="true">FORM</span>
+
+    <span class="hero-tag" id="heroTag">✦ Studio RIU — 2026</span>
+
+    <h1 class="hero-heading" id="heroHeading">
+      Quiet<br/>Systems.<br/><em>Considered</em><br/>Interfaces.
+    </h1>
+
+    <p class="hero-sub" id="heroSub">
+      We build digital experiences where restraint is the sharpest tool.
+      Every pixel earns its place. Every transition tells a story.
+    </p>
+
+    <div class="hero-rule" id="heroRule"></div>
+
+    <!-- Visual ghost of where the images will land -->
+    <div class="hero-corner-hint" aria-hidden="true"></div>
+  </main>
+
+  <!-- ============================================================
+       PRELOADER — sits above the hero on z-index: 100
+  ============================================================ -->
+  <div class="preloader" id="preloader" aria-hidden="true">
+
+    <!-- The dark wipe panel -->
+    <div class="preloader-bg" id="preloaderBg"></div>
+
+    <!-- All images stacked at top-left, scale: 0 initially -->
+    <div class="images-container" id="imagesContainer">
+
+      <!--
+        Six Unsplash images chosen for tonal variety:
+        architecture, texture, nature, interiors — high quality.
+        Each shares the same .fly-img class and stacks on top of each other.
+      -->
+      <img
+        class="fly-img"
+        src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=640&q=80&auto=format"
+        alt="Interior architecture"
+        loading="eager"
+        draggable="false"
+      />
+      <img
+        class="fly-img"
+        src="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=640&q=80&auto=format"
+        alt="Modern furniture"
+        loading="eager"
+        draggable="false"
+      />
+      <img
+        class="fly-img"
+        src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=640&q=80&auto=format"
+        alt="Architectural exterior"
+        loading="eager"
+        draggable="false"
+      />
+      <img
+        class="fly-img"
+        src="https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=640&q=80&auto=format"
+        alt="Minimal interior"
+        loading="eager"
+        draggable="false"
+      />
+      <img
+        class="fly-img"
+        src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=640&q=80&auto=format"
+        alt="Contemporary living space"
+        loading="eager"
+        draggable="false"
+      />
+      <img
+        class="fly-img"
+        src="https://images.unsplash.com/photo-1507089947368-19c1da9775ae?w=640&q=80&auto=format"
+        alt="Geometric architecture"
+        loading="eager"
+        draggable="false"
+      />
+
+    </div><!-- /images-container -->
+
+  </div><!-- /preloader -->
+
+
+  <script>
+    /* ============================================================
+       CONFIGURATION — tweak these values to tune the animation
+    ============================================================ */
+    const CONFIG = {
+      // Phase 1: How fast each image pops in (seconds)
+      popDuration:  0.8,
+      popStagger:   0.15,
+
+      // Pause between pop-in completing and the swoop starting
+      swoopDelay:   0.2,
+
+      // Phase 2: Total duration of the diagonal flight (seconds)
+      swoopDuration: 1.5,
+      swoopStagger:  0.12,
+
+      // Phase 3: Background wipe duration — synced with swoop start
+      wipeDuration:  1.5,
+
+      // Edge padding: distance from screen edges when images land (px)
+      edgePad: 20,
+
+      // Hero content reveal duration after preloader finishes
+      heroDuration: 0.8,
+    };
+
+    /* ============================================================
+       TRAJECTORY CALCULATOR
+       dx and dy are how far each image needs to travel from its
+       top-left origin (top:20px, left:20px) to reach the bottom-right.
+
+       We always recalculate on resize so the landing spot is accurate
+       on any screen size, including after orientation changes.
+    ============================================================ */
+    let dx = 0;
+    let dy = 0;
+
+    function calculateTrajectory() {
+      // Use the FIRST image's bounding box as the reference for size
+      const firstImg = document.querySelector('.fly-img');
+      if (!firstImg) return;
+
+      const imgWidth  = firstImg.offsetWidth;
+      const imgHeight = firstImg.offsetHeight;
+
+      // The image starts at CSS top:20px, left:20px
+      // We want it to LAND so its right edge = viewport right − padding
+      // and its bottom edge = viewport bottom − padding.
+      //
+      // Landing left  = viewportWidth  − imgWidth  − edgePad
+      // Landing top   = viewportHeight − imgHeight − edgePad
+      // dx = landingLeft − startingLeft (20px)
+      // dy = landingTop  − startingTop  (20px)
+      const startX = 20;
+      const startY = 20;
+
+      dx = (window.innerWidth  - imgWidth  - CONFIG.edgePad) - startX;
+      dy = (window.innerHeight - imgHeight - CONFIG.edgePad) - startY;
+    }
+
+    /* ============================================================
+       MAIN ANIMATION SEQUENCE
+    ============================================================ */
+    function runPreloader() {
+      // --- Calculate trajectory FIRST, before any scale transform ---
+      // getBoundingClientRect() reflects CSS transforms, so measuring after
+      // gsap.set scale:0 would return near-zero dimensions and make dx/dy
+      // overshoot by the full image width/height. Measure at natural size first.
+      calculateTrajectory();
+
+      // --- Set initial hidden state ---
+      // All images start at scale: 0 (invisible, not taking up space visually)
+      gsap.set('.fly-img', { scale: 0, transformOrigin: 'center center' });
+
+      // --- Build the master timeline ---
+      const tl = gsap.timeline({
+        onComplete: revealHeroContent, // After preloader, animate the hero in
+      });
+
+      /* -------------------------------------------------------
+         PHASE 1: THE POP-IN
+         Images scale up from 0 → 1, staggered, giving that
+         satisfying "stamps appearing" feel before the flight.
+      ------------------------------------------------------- */
+      tl.to('.fly-img', {
+        scale: 1,
+        duration: CONFIG.popDuration,
+        stagger: CONFIG.popStagger,
+        ease: "power3.out",
+      });
+
+      /* -------------------------------------------------------
+         PHASE 2: THE DIAGONAL SWOOP
+         Images fly from top-left → bottom-right using calculated dx/dy.
+
+         The keyframes create a "jump towards camera" depth illusion:
+           15%  → scale 1.15  (starts accelerating visually)
+           45%  → scale 1.5   (peak: image looms largest, feels closest)
+           100% → scale 1.0   (lands back at natural size)
+
+         This tricks the eye into perceiving a Z-axis arc, not just
+         flat 2D movement across the screen.
+      ------------------------------------------------------- */
+      tl.to('.fly-img', {
+        x: dx,
+        y: dy,
+        duration: CONFIG.swoopDuration,
+        stagger: CONFIG.swoopStagger,
+        ease: "power2.inOut",
+        keyframes: {
+          "15%": { scale: 1.15 },
+          "45%": { scale: 1.5,  ease: "power2.out" },
+          "100%":{ scale: 1.0,  ease: "power2.inOut" },
+        },
+      }, `+=${CONFIG.swoopDelay}`); // Short pause after pop-in
+
+      /* -------------------------------------------------------
+         PHASE 3: THE BACKGROUND WIPE
+         The dark overlay shrinks to height: 0% from the bottom up,
+         dissolving upward to expose the hero underneath.
+
+         The "<" position token means: start THIS animation at the
+         SAME TIME as Phase 2 starts — perfectly synchronized.
+      ------------------------------------------------------- */
+      tl.to('#preloaderBg', {
+        height: "0%",
+        duration: CONFIG.wipeDuration,
+        ease: "power3.inOut",
+      }, "<"); // "<" = sync with start of Phase 2
+
+    } /* end runPreloader */
+
+    /* ============================================================
+       HERO CONTENT REVEAL
+       Runs after the preloader timeline completes.
+       Staggers in the hero text elements with gentle upward motion.
+    ============================================================ */
+    function revealHeroContent() {
+      // Re-enable body scroll now that preloader is done
+      document.body.style.overflow = '';
+
+      const heroCt = gsap.timeline();
+
+      heroCt
+        .to('#heroTag', {
+          opacity: 1,
+          y: 0,
+          duration: CONFIG.heroDuration * 0.7,
+          ease: "power3.out",
+        })
+        .to('#heroHeading', {
+          opacity: 1,
+          y: 0,
+          duration: CONFIG.heroDuration,
+          ease: "power3.out",
+        }, "-=0.4")
+        .to('#heroSub', {
+          opacity: 1,
+          y: 0,
+          duration: CONFIG.heroDuration,
+          ease: "power3.out",
+        }, "-=0.5")
+        .to('#heroRule', {
+          opacity: 1,
+          scaleX: 1,
+          duration: 0.5,
+          ease: "power2.out",
+        }, "-=0.4");
+    }
+
+    /* ============================================================
+       RESIZE HANDLER
+       Recalculates trajectory values in case the user resizes
+       mid-animation (rare but keeps things robust).
+    ============================================================ */
+    window.addEventListener('resize', calculateTrajectory);
+
+    /* ============================================================
+       INITIAL STATE for hero elements (they start invisible)
+       GSAP sets these so they animate in cleanly on reveal.
+    ============================================================ */
+    gsap.set(['#heroTag', '#heroHeading', '#heroSub'], { y: 30 });
+    gsap.set('#heroRule', { scaleX: 0, transformOrigin: 'left center' });
+
+    /* ============================================================
+       KICK OFF — wait for all images to be in the DOM
+    ============================================================ */
+    document.addEventListener('DOMContentLoaded', () => {
+      runPreloader();
+    });
+
+  </script>
+</body>
+</html>

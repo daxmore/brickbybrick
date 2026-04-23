@@ -1,7 +1,9 @@
 import React from 'react';
 import { useProject } from '../../context/ProjectContext';
+import CurvedWipeNav from './nav/CurvedWipeNav';
+import KineticNav from './nav/KineticNav';
 
-const NavbarBlock = ({ id, props, editMode }) => {
+const StandardNav = ({ id, props, editMode }) => {
   const { updateBlockProps, selectedBlockId, setSelectedBlockId } = useProject();
   const isSelected = selectedBlockId === id;
 
@@ -52,6 +54,19 @@ const NavbarBlock = ({ id, props, editMode }) => {
       </div>
     </nav>
   );
+};
+
+const NavbarBlock = (blockProps) => {
+  const { props } = blockProps;
+  
+  switch (props.variant) {
+    case 'curved':
+      return <CurvedWipeNav {...blockProps} />;
+    case 'kinetic':
+      return <KineticNav {...blockProps} />;
+    default:
+      return <StandardNav {...blockProps} />;
+  }
 };
 
 export default NavbarBlock;

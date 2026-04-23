@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Cinematic Slider | Awwwards Standard</title>
+    
+    <!-- CDNs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
+    <script src="https://unpkg.com/split-type"></script>
+    <link rel="stylesheet" href="../../assets/global-nav.css">
+    <script src="../../assets/global-nav.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@900&family=Space+Mono&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-dark: #0a0a0a;
+            --text-light: #ffffff;
+            --font-main: 'Inter', sans-serif;
+            --font-mono: 'Space Mono', monospace;
+            --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+
+
+        /* Lead-in/Out */
+        .intro, .outro {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-dark);
+            position: relative;
+            z-index: 10;
+        }
+
+        .intro h2, .outro h2 {
+            font-size: 1.2rem;
+            font-weight: 300;
+            opacity: 0.4;
+            letter-spacing: 0.4rem;
+            text-transform: uppercase;
+        }
+
+        /* Main Slider */
+        .slider {
+            position: relative;
+            height: 100vh;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        /* Image Stacking */
+        .slider-images {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+        }
+        .slider-images::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 60%, transparent 100%);
+            z-index: 2;
+        }
+
+        .slide-img-el {
+            position: absolute;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transform: scale(1.1);
+            will-change: transform, opacity;
+        }
+
+        /* Title Stacking */
+        .slider-titles {
+            position: absolute;
+            left: 8%; top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            width: 80%;
+        }
+
+        .slide-title-el {
+            position: absolute;
+            top: 50%; left: 0;
+            transform: translateY(-50%);
+            opacity: 0;
+            width: 100%;
+        }
+
+        .slide-title-el h1 {
+            font-size: clamp(2.5rem, 10vw, 8.5rem);
+            text-transform: uppercase;
+            letter-spacing: -0.2rem;
+            line-height: 0.85;
+        }
+
+        /* Typography Masking */
+        .line-mask {
+            overflow: hidden;
+            display: block;
+        }
+
+        /* UI Elements */
+        .slider-indicator {
+            position: absolute;
+            right: 40px; top: 50%;
+            transform: translateY(-50%);
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        .slider-indices {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            align-items: flex-end;
+        }
+
+        .index-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            opacity: 0.25;
+            transition: opacity 0.4s var(--ease-in-out);
+        }
+
+        .index-marker {
+            width: 12px; height: 1px;
+            background: #fff;
+            transform: scaleX(0);
+            transform-origin: right;
+        }
+
+        .slider-progress-bar {
+            width: 1px; height: 180px;
+            background: rgba(255,255,255,0.1);
+            position: relative;
+        }
+
+        .slider-progress {
+            position: absolute;
+            top: 0; left: 0; width: 100%;
+            height: 100%; background: #fff;
+            transform: scaleY(0);
+            transform-origin: top;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            nav { padding: 20px; }
+            .slider-titles { left: 5%; width: 90%; }
+            .slide-title-el h1 { letter-spacing: -0.1rem; }
+            .slider-indicator { right: 20px; }
+            .slider-progress-bar { height: 120px; }
+            .index-marker { width: 8px; }
+            .slider-indices { gap: 15px; }
+        }
+
+        html.lenis, html.lenis body { height: auto; }
+        .lenis.lenis-smooth { scroll-behavior: auto !important; }
+    </style>
+</head>
+<body>
+
+
+
+    <main>
+        <section class="intro"><h2>BEGIN JOURNEY</h2></section>
+
+        <section class="slider">
+            <div class="slider-images" id="image-container"></div>
+            <div class="slider-titles" id="title-container"></div>
+            
+            <div class="slider-indicator">
+                <div class="slider-indices" id="indices-container"></div>
+                <div class="slider-progress-bar">
+                    <div class="slider-progress" id="progress-fill"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="outro"><h2>END JOURNEY</h2></section>
+    </main>
+
+    <script>
+        const slides = [
+            { title: "Architectural Voids", image: "https://images.unsplash.com/photo-1773332585956-2d0e8ac80cb6?q=80&w=1920&auto=format" },
+            { title: "Ethereal Landscapes", image: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1920" },
+            { title: "Timeless Textures", image: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=1920" },
+            { title: "Urban Symmetry", image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1920" },
+            { title: "Infinite Horizons", image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1920" }
+        ];
+
+        function init() {
+            gsap.registerPlugin(ScrollTrigger, Draggable);
+            initGlobalNav('../../');
+
+            // Lenis Initialization
+            const lenis = new Lenis({ lerp: 0.1, smoothWheel: true });
+            lenis.on('scroll', ScrollTrigger.update);
+            gsap.ticker.add((time) => lenis.raf(time * 1000));
+
+            // 1. Pre-render DOM
+            renderSlides();
+            
+            // 2. Master Timeline Setup
+            const pinDistance = window.innerHeight * slides.length;
+            const masterTl = gsap.timeline({
+                scrollTrigger: {
+                    trigger: ".slider",
+                    start: "top top",
+                    end: () => "+=" + pinDistance,
+                    pin: true,
+                    scrub: 0.5,
+                    invalidateOnRefresh: true
+                }
+            });
+
+            // Set Initial State for first slide
+            gsap.set(".slide-img-el:nth-child(1)", { opacity: 1, scale: 1 });
+            gsap.set(".slide-title-el:nth-child(1)", { opacity: 1 });
+            gsap.set(".index-item:nth-child(1)", { opacity: 1 });
+            gsap.set(".index-item:nth-child(1) .index-marker", { scaleX: 1 });
+
+            // 3. Build Timeline
+            slides.forEach((_, i) => {
+                if (i === 0) {
+                    // Start progress bar mapping
+                    masterTl.to("#progress-fill", { scaleY: 1, ease: "none", duration: slides.length });
+                    return;
+                }
+
+                const prevIndex = i;
+                const currIndex = i + 1;
+                const pos = i; // Position in timeline
+
+                // Transition Logic
+                // Fade out previous text
+                masterTl.to(`.slide-title-el:nth-child(${prevIndex}) .line`, {
+                    y: -40, opacity: 0, stagger: 0.03, duration: 0.4, ease: "none"
+                }, pos - 0.5)
+                .to(`.index-item:nth-child(${prevIndex})`, { opacity: 0.25, duration: 0.3, ease: "none" }, pos - 0.5)
+                .to(`.index-item:nth-child(${prevIndex}) .index-marker`, { scaleX: 0, duration: 0.3, ease: "none" }, pos - 0.5);
+
+                // Crossfade images
+                masterTl.to(`.slide-img-el:nth-child(${currIndex})`, {
+                    opacity: 1, scale: 1, duration: 0.8, ease: "none"
+                }, pos - 0.4);
+
+                // Fade in new text
+                masterTl.set(`.slide-title-el:nth-child(${currIndex})`, { opacity: 1 }, pos - 0.1)
+                .fromTo(`.slide-title-el:nth-child(${currIndex}) .line`, 
+                    { y: 100 }, 
+                    { y: 0, duration: 0.8, stagger: 0.05, ease: "none" }, 
+                pos - 0.1);
+
+                // Update indicators
+                masterTl.to(`.index-item:nth-child(${currIndex})`, { opacity: 1, duration: 0.3, ease: "none" }, pos - 0.1)
+                .to(`.index-item:nth-child(${currIndex}) .index-marker`, { scaleX: 1, duration: 0.3, ease: "none" }, pos - 0.1);
+            });
+        }
+
+        function renderSlides() {
+            const imgContainer = document.getElementById('image-container');
+            const titleContainer = document.getElementById('title-container');
+            const indicesContainer = document.getElementById('indices-container');
+
+            slides.forEach((slide, i) => {
+                // Image
+                const img = document.createElement('img');
+                img.src = slide.image;
+                img.className = 'slide-img-el';
+                imgContainer.appendChild(img);
+
+                // Title
+                const titleWrapper = document.createElement('div');
+                titleWrapper.className = 'slide-title-el';
+                titleWrapper.innerHTML = `<h1>${slide.title}</h1>`;
+                titleContainer.appendChild(titleWrapper);
+
+                // SplitText with Masking
+                const split = new SplitType(titleWrapper.querySelector('h1'), { types: 'lines' });
+                split.lines.forEach(line => {
+                    const mask = document.createElement('div');
+                    mask.className = 'line-mask';
+                    line.parentNode.insertBefore(mask, line);
+                    mask.appendChild(line);
+                });
+
+                // Index
+                const indexNum = (i + 1).toString().padStart(2, '0');
+                const p = document.createElement('p');
+                p.className = 'index-item';
+                p.innerHTML = `<span class="index-marker"></span><span>${indexNum}</span>`;
+                indicesContainer.appendChild(p);
+            });
+        }
+
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

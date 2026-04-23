@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chaotic Path | Scroll-Driven Stroke</title>
+    
+    <link rel="stylesheet" href="../../assets/global-nav.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="../../assets/global-nav.js"></script>
+    <script src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js"></script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #f8f9fa;
+            --text: #0f172a;
+            --accent: #0e2c5e;
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --radius: 24px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        /* Smooth Scroll Fix */
+        html.lenis, html.lenis body { height: auto; }
+        .lenis.lenis-smooth { scroll-behavior: auto !important; }
+
+        /* Sections */
+        section {
+            width: 100%;
+            position: relative;
+        }
+
+        .intro, .outro {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            background: var(--bg);
+        }
+
+        .intro h1, .outro h1 {
+            font-size: clamp(2rem, 8vw, 6rem);
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            text-transform: uppercase;
+        }
+
+        /* Spotlight Container */
+        .spotlight {
+            padding: 10vh 5vw;
+            display: flex;
+            flex-direction: column;
+            gap: 25vh; /* Large gap for path to breathe */
+            overflow: visible; /* Essential for SVG overflow */
+        }
+
+        /* SVG Engine */
+        .svg-container {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* Behind content */
+            pointer-events: none;
+            overflow: visible;
+        }
+
+        #scroll-svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Row Architecture */
+        .row {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .row.full { max-width: 1400px; }
+        .row.reverse { flex-direction: row-reverse; }
+
+        .img-box {
+            flex: 1;
+            height: 500px;
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .img-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .text-card {
+            flex: 1;
+            padding: 60px;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.4);
+            border-radius: var(--radius);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        .text-card h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: var(--accent);
+        }
+
+        .text-card p {
+            font-size: 1.1rem;
+            line-height: 1.7;
+            opacity: 0.8;
+        }
+
+        /* Mobile Optimization */
+        @media (max-width: 968px) {
+            .row, .row.reverse {
+                flex-direction: column;
+            }
+            .text-card { padding: 40px; }
+            .spotlight { gap: 15vh; }
+        }
+    </style>
+</head>
+<body>
+
+    <main>
+        <section class="intro">
+            <h1>The Journey</h1>
+        </section>
+
+        <section class="spotlight">
+            <!-- The Chaotic Path -->
+            <div class="svg-container">
+                <svg id="scroll-svg" viewBox="0 0 2487 4196" fill="none" preserveAspectRatio="xMidYMin slice" xmlns="http://www.w3.org/2000/svg">
+                    <path id="animated-path" d="M2016.15 203.001C2016.15 203.001 718.145 -269.499 381.145 809.501C44.1453 1888.5 3007.91 609.615 2184.65 1888.5C1361.38 3167.39 -633.211 4435.79 381.145 2529C1395.5 622.21 2943.15 3371.5 2184.65 4096" 
+                        stroke="url(#paint0_linear)" 
+                        stroke-width="200" 
+                        stroke-linecap="round" />
+                    <defs>
+                        <linearGradient id="paint0_linear" x1="1243.4" y1="99.9995" x2="1243.4" y2="4096" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#5D85A6"/>
+                            <stop offset="1" stop-color="#0E2C5E"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+
+            <!-- Content Rows -->
+            <div class="row full">
+                <div class="img-box">
+                    <img src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1400&q=80" alt="Tech">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="text-card">
+                    <h2>Design Narrative</h2>
+                    <p>In the chaos of creation, we find the threads of intentionality. Our process is winding, never linear, yet it leads to a singular moment of clarity.</p>
+                </div>
+                <div class="img-box">
+                    <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1000&q=80" alt="Flow">
+                </div>
+            </div>
+
+            <div class="row reverse">
+                <div class="text-card">
+                    <h2>Ethereal Flow</h2>
+                    <p>The path weaves through the obstacles of conventionality, drawing a new map for digital interaction that feels organic and alive.</p>
+                </div>
+                <div class="img-box">
+                    <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1000&q=80" alt="Performance">
+                </div>
+            </div>
+
+            <div class="row full">
+                <div class="img-box">
+                    <img src="https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=1400&q=80" alt="Finality">
+                </div>
+            </div>
+        </section>
+
+        <section class="outro">
+            <h1>Destination</h1>
+        </section>
+    </main>
+
+    <script>
+        // --- 1. INITIALIZATION ---
+        gsap.registerPlugin(ScrollTrigger, Draggable);
+        initGlobalNav('../../');
+
+        // Lenis Smooth Scroll
+        const lenis = new Lenis({
+            duration: 1.2,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            smoothWheel: true
+        });
+
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+
+        // Sync Lenis with ScrollTrigger
+        lenis.on('scroll', ScrollTrigger.update);
+        gsap.ticker.add((time) => {
+            lenis.raf(time * 1000);
+        });
+
+        // --- 2. STROKE ANIMATION ENGINE ---
+        const path = document.querySelector('#animated-path');
+        const pathLength = path.getTotalLength();
+
+        // Initial Stroke State
+        gsap.set(path, {
+            strokeDasharray: pathLength,
+            strokeDashoffset: pathLength
+        });
+
+        // Drawing Animation
+        gsap.to(path, {
+            strokeDashoffset: 0,
+            ease: "none", // Critical for linear scroll mapping
+            scrollTrigger: {
+                trigger: ".spotlight",
+                start: "top top",
+                end: "bottom bottom",
+                scrub: 0.5, // Subtle smoothing of the drawing
+            }
+        });
+
+        // --- 3. POLISH: ROW PARALLAX ---
+        document.querySelectorAll('.row').forEach((row, i) => {
+            gsap.from(row, {
+                y: 100,
+                opacity: 0,
+                scale: 0.95,
+                duration: 1.2,
+                ease: "power3.out",
+                scrollTrigger: {
+                    trigger: row,
+                    start: "top 85%",
+                    toggleActions: "play none none reverse"
+                }
+            });
+        });
+    </script>
+</body>
+</html>

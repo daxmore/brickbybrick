@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal Scramble Grid | Creative Hover</title>
+    <!-- Import Monospace Font for Terminal Aesthetic -->
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../assets/global-nav.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
+    <script src="../../assets/global-nav.js"></script>
+    <style>
+        :root {
+            --bg-color: #050505;
+            --accent-color: #00ffcc;
+            --block-bg: rgba(0, 0, 0, 0.85);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 1. HTML & CSS ARCHITECTURE */
+        .hover-image {
+            position: relative;
+            width: 600px; /* Increased width */
+            height: 750px; /* Increased height */
+            overflow: hidden;
+            background: #111;
+            cursor: crosshair;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+        }
+
+        .hover-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            pointer-events: none;
+            filter: brightness(0.8);
+        }
+
+        .grid-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .grid-block {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--block-bg);
+            color: var(--accent-color);
+            font-family: 'IBM Plex Mono', 'Courier New', monospace;
+            font-size: 10px; /* Smaller font for higher density */
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.2s ease-out;
+            box-sizing: border-box;
+        }
+
+        .grid-block.active {
+            opacity: 1;
+            transition: opacity 0.05s ease-in;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hover-image" id="scrambleContainer">
+        <!-- Placeholder Image -->
+        <img src="https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&q=80&w=1200" alt="Terminal Grid Source">
+    </div>
+
+    <script>
+        gsap.registerPlugin(Draggable);
+        initGlobalNav('../../');
+
+        /**
+         * 2. JS CONFIGURATION OBJECT
+         */
+        const config = {
+            symbols: ['X', '0', '$', '>', '-', '+', '%', '*'],
+            blockSize: 20,        /* Halved size = 4x density */
+            detectionRadius: 70,  /* Tightened radius for surgical precision */
+            clusterSize: 2,       /* Smaller ripple */
+            blockLifetime: 350,   /* Slightly faster decay */
+            emptyRatio: 0.75,     /* More empty space for a cleaner look */
+            scrambleRatio: 0.4,
+            scrambleInterval: 40
+        };
+
+        let blocks = [];
+
+        /**
+         * 3. INITIALIZATION (Grid Generation)
+         */
+        function initializeGrid(wrapper) {
+            const overlay = document.createElement('div');
+            overlay.className = 'grid-overlay';
+            wrapper.appendChild(overlay);
+
+            const rect = wrapper.getBoundingClientRect();
+            const cols = Math.ceil(rect.width / config.blockSize);
+            const rows = Math.ceil(rect.height / config.blockSize);
+
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    const blockEl = document.createElement('div');
+                    blockEl.className = 'grid-block';
+                    blockEl.style.width = `${config.blockSize}px`;
+                    blockEl.style.height = `${config.blockSize}px`;
+                    blockEl.style.left = `${x * config.blockSize}px`;
+                    blockEl.style.top = `${y * config.blockSize}px`;
+
+                    const isEmpty = Math.random() < config.emptyRatio;
+                    const shouldScramble = !isEmpty && Math.random() < config.scrambleRatio;
+                    
+                    if (!isEmpty) {
+                        blockEl.innerText = config.symbols[Math.floor(Math.random() * config.symbols.length)];
+                    }
+
+                    overlay.appendChild(blockEl);
+
+                    blocks.push({
+                        el: blockEl,
+                        centerX: (x * config.blockSize) + (config.blockSize / 2),
+                        centerY: (y * config.blockSize) + (config.blockSize / 2),
+                        gridX: x,
+                        gridY: y,
+                        highlightEndTime: 0,
+                        isEmpty: isEmpty,
+                        shouldScramble: shouldScramble,
+                        intervalId: null
+                    });
+                }
+            }
+        }
+
+        /**
+         * 4. THE INTERACTION (Mouse Tracking & Proximity Math)
+         */
+        function activateBlock(block, additionalLifetime = 0) {
+            block.el.classList.add('active');
+            block.highlightEndTime = Date.now() + config.blockLifetime + additionalLifetime;
+
+            if (!block.isEmpty && block.shouldScramble && !block.intervalId) {
+                block.intervalId = setInterval(() => {
+                    block.el.innerText = config.symbols[Math.floor(Math.random() * config.symbols.length)];
+                }, config.scrambleInterval);
+            }
+        }
+
+        function handleInteraction(e, wrapper) {
+            const rect = wrapper.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            blocks.forEach(block => {
+                const dx = mouseX - block.centerX;
+                const dy = mouseY - block.centerY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < config.detectionRadius) {
+                    activateBlock(block);
+
+                    // Clustering (The Ripple Neighbors)
+                    const neighbors = blocks.filter(b => 
+                        b !== block && 
+                        Math.abs(b.gridX - block.gridX) <= 1 && 
+                        Math.abs(b.gridY - block.gridY) <= 1
+                    );
+
+                    for (let i = 0; i < config.clusterSize; i++) {
+                        const randomNeighbor = neighbors[Math.floor(Math.random() * neighbors.length)];
+                        if (randomNeighbor) {
+                            activateBlock(randomNeighbor, 100);
+                        }
+                    }
+                }
+            });
+        }
+
+        /**
+         * 5. THE RENDER LOOP (Decay & Cleanup)
+         */
+        function updateHighlights() {
+            const now = Date.now();
+
+            blocks.forEach(block => {
+                if (block.highlightEndTime > 0 && now > block.highlightEndTime) {
+                    block.el.classList.remove('active');
+                    
+                    if (block.intervalId) {
+                        clearInterval(block.intervalId);
+                        block.intervalId = null;
+                    }
+
+                    block.highlightEndTime = 0;
+
+                    if (!block.isEmpty) {
+                        block.el.innerText = config.symbols[Math.floor(Math.random() * config.symbols.length)];
+                    }
+                }
+            });
+
+            requestAnimationFrame(updateHighlights);
+        }
+
+        const container = document.getElementById('scrambleContainer');
+        initializeGrid(container);
+        
+        container.addEventListener('mousemove', (e) => handleInteraction(e, container));
+        requestAnimationFrame(updateHighlights);
+    </script>
+</body>
+</html>

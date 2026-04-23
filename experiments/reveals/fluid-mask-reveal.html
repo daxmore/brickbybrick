@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Awwwards Fluid Mask Reveal</title>
+    <link rel="stylesheet" href="../../assets/global-nav.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
+    <script src="../../assets/global-nav.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(220.55deg, #FFF6EB 0%, #DFD1C5 100%);
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        /* 1. DOM Architecture */
+        #bottom-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        #main-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #1a1a1a;
+            /* Dark text for the light gradient background */
+        }
+
+        /* 2. PREMIUM UI MICRO-INTERACTIONS */
+        .navbar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 2rem 4rem;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            letter-spacing: 1px;
+            font-size: 1.1rem;
+            pointer-events: auto;
+        }
+
+        .magnetic-link {
+            display: inline-block;
+            cursor: pointer;
+            padding: 10px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .magnetic-content {
+            display: flex;
+        }
+
+        /* Rolling Text Effect */
+        .char-wrap {
+            display: inline-flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 1.2em;
+            position: relative;
+        }
+
+        .char-wrap .char {
+            display: inline-block;
+            transition: transform 0.4s cubic-bezier(0.76, 0, 0.24, 1);
+        }
+
+        .char-wrap .char::after {
+            content: attr(data-char);
+            position: absolute;
+            top: 100%;
+            left: 0;
+        }
+
+        .magnetic-link:hover .char-wrap .char {
+            transform: translateY(-100%);
+        }
+
+        /* Hero Title */
+        .hero-title {
+            font-size: 6vw;
+            font-weight: 800;
+            display: flex;
+            overflow: hidden;
+            letter-spacing: -0.02em;
+            pointer-events: none;
+        }
+
+        .hero-title span {
+            display: inline-block;
+            transform: translateY(110%);
+        }
+
+        /* Hidden SVG Filter */
+        #svg-filters {
+            position: absolute;
+            width: 0;
+            height: 0;
+            pointer-events: none;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <!-- Inline SVG for Gooey Filter -->
+    <svg id="svg-filters">
+        <defs>
+            <filter id="gooey-filter">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="15" result="blur" />
+                <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 30 -15"
+                    result="gooey" />
+            </filter>
+        </defs>
+    </svg>
+
+    <!-- Bottom Image (Revealed) -->
+    <img id="bottom-image" src="../../assets/images/bottom.jpg" alt="Revealed Image">
+
+    <!-- Main Canvas (Top Image + Masking) -->
+    <canvas id="main-canvas"></canvas>
+
+    <!-- UI Layer -->
+    <div class="ui-layer">
+        <div class="hero-title" id="hero-title">
+            <!-- Characters injected via JS -->
+        </div>
+    </div>
+
+        <script>
+            gsap.registerPlugin(Draggable);
+            initGlobalNav('../../');
+
+            // --- 1. UI PREPARATION & ANIMATIONS ---
+
+            function createRollingText(id, text) {
+                const container = document.querySelector(`#${id} .magnetic-content`);
+                if (!container) return; // Guard against null container
+                text.split('').forEach((char, i) => {
+                    const wrap = document.createElement('span');
+                    wrap.className = 'char-wrap';
+                    const inner = document.createElement('span');
+                    inner.className = 'char';
+                    inner.setAttribute('data-char', char);
+                    inner.style.transitionDelay = `${i * 0.02}s`;
+                    inner.innerHTML = char === ' ' ? '&nbsp;' : char;
+                    wrap.appendChild(inner);
+                    container.appendChild(wrap);
+                });
+            }
+
+            createRollingText('link-kinetic', 'KINETIC.');
+            createRollingText('link-menu', 'MENU');
+
+            const titleText = "DISCOVER THE UNSEEN";
+            const titleContainer = document.getElementById('hero-title');
+            titleText.split('').forEach(char => {
+                const span = document.createElement('span');
+                span.innerHTML = char === ' ' ? '&nbsp;' : char;
+                titleContainer.appendChild(span);
+            });
+
+            // GSAP: Hero Stagger In
+            window.addEventListener('load', () => {
+                gsap.to('#hero-title span', {
+                    y: 0,
+                    duration: 1.2,
+                    stagger: 0.04,
+                    ease: "power4.out",
+                    delay: 0.2
+                });
+            });
+
+            // Magnetic Links
+            document.querySelectorAll('.magnetic-link').forEach(link => {
+                const content = link.querySelector('.magnetic-content');
+                link.addEventListener('mousemove', (e) => {
+                    const rect = link.getBoundingClientRect();
+                    const x = (e.clientX - rect.left - rect.width / 2) * 0.4;
+                    const y = (e.clientY - rect.top - rect.height / 2) * 0.4;
+                    gsap.to(content, { x, y, duration: 0.4, ease: "power2.out" });
+                });
+                link.addEventListener('mouseleave', () => {
+                    gsap.to(content, { x: 0, y: 0, duration: 1, ease: "elastic.out(1, 0.3)" });
+                });
+            });
+
+
+            // --- 2. THE 2D CANVAS FLUID ENGINE ---
+
+            const mainCanvas = document.getElementById('main-canvas');
+            const mainCtx = mainCanvas.getContext('2d');
+            const maskCanvas = document.createElement('canvas');
+            const maskCtx = maskCanvas.getContext('2d');
+
+            let width, height;
+            function resize() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                mainCanvas.width = maskCanvas.width = width;
+                mainCanvas.height = maskCanvas.height = height;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            const topImg = new Image();
+            topImg.src = '../../assets/images/top.jpg';
+            let imgLoaded = false;
+            topImg.onload = () => { imgLoaded = true; };
+
+            let mouse = { x: 0, y: 0 };
+            let lastMouse = { x: 0, y: 0 };
+            let isMoving = false;
+
+            window.addEventListener('mousemove', (e) => {
+                lastMouse.x = mouse.x;
+                lastMouse.y = mouse.y;
+                mouse.x = e.clientX;
+                mouse.y = e.clientY;
+                isMoving = true;
+            });
+
+            // Custom drawImage helper for object-fit: cover
+            function drawCoverImage(ctx, img, w, h) {
+                const imgRatio = img.width / img.height;
+                const canvasRatio = w / h;
+                let renderW, renderH, x, y;
+
+                if (imgRatio > canvasRatio) {
+                    renderH = h;
+                    renderW = img.width * (h / img.height);
+                    x = (w - renderW) / 2;
+                    y = 0;
+                } else {
+                    renderW = w;
+                    renderH = img.height * (w / img.width);
+                    x = 0;
+                    y = (h - renderH) / 2;
+                }
+                ctx.drawImage(img, x, y, renderW, renderH);
+            }
+
+            // --- 3. MAIN ANIMATION LOOP ---
+
+            function animate() {
+                requestAnimationFrame(animate);
+
+                // 1. Trail & Decay on Hidden Mask Canvas
+                if (isMoving) {
+                    maskCtx.globalCompositeOperation = 'source-over';
+                    maskCtx.beginPath();
+                    maskCtx.moveTo(lastMouse.x, lastMouse.y);
+                    maskCtx.lineTo(mouse.x, mouse.y);
+                    maskCtx.lineWidth = 160;
+                    maskCtx.lineCap = 'round';
+                    maskCtx.lineJoin = 'round';
+                    maskCtx.strokeStyle = 'white';
+                    maskCtx.stroke();
+                    isMoving = false;
+                }
+
+                maskCtx.globalCompositeOperation = 'destination-out';
+                maskCtx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                maskCtx.fillRect(0, 0, width, height);
+
+                // 2. Compositing on Main Canvas
+                mainCtx.clearRect(0, 0, width, height);
+
+                if (imgLoaded) {
+                    drawCoverImage(mainCtx, topImg, width, height);
+
+                    mainCtx.globalCompositeOperation = 'destination-out';
+                    mainCtx.filter = 'url(#gooey-filter)';
+                    mainCtx.drawImage(maskCanvas, 0, 0);
+
+                    mainCtx.filter = 'none';
+                    mainCtx.globalCompositeOperation = 'source-over';
+                }
+            }
+
+            animate();
+        </script>
+</body>
+
+</html>

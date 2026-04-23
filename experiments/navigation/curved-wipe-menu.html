@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Curved Wipe Menu</title>
+
+  <!-- Google Font: Outfit for a clean, modern look -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
+
+  <!-- GSAP CDN (free core version) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <style>
+    /* ============================================================
+       CSS RESET & BASE STYLES
+    ============================================================ */
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      /* Pastel palette tokens — easy to customize */
+      --color-bg: #F5F2E8;
+      /* Vanilla Haze — warm off-white page bg */
+      --color-menu-fill: #1a1a1a;
+      /* Dark charcoal for the SVG wipe shape */
+      --color-logo: #1a1a1a;
+      --color-toggle: #1a1a1a;
+      --color-link: #F0D9D1;
+      /* Soft Peach — giant nav link color */
+      --color-link-hover: #E8D5D0;
+      /* Soft Blush — hover accent */
+      --color-info-text: #B0ACA8;
+      /* Warm Gray — secondary info text */
+      --color-info-label: #888888;
+      /* Charcoal Blush — small labels */
+      --color-accent: #C8A8F5;
+      /* Electric Lavender — accent dot/highlight */
+
+      --font-main: 'Outfit', sans-serif;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow-x: hidden;
+      font-family: var(--font-main);
+      background-color: var(--color-bg);
+      color: var(--color-logo);
+    }
+
+    /* ============================================================
+       PAGE HERO — the content behind the menu
+    ============================================================ */
+    .page-hero {
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .page-hero h2 {
+      font-size: clamp(2rem, 6vw, 5rem);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      color: #1a1a1a;
+      line-height: 1.1;
+    }
+
+    .page-hero p {
+      font-size: clamp(0.9rem, 2vw, 1.2rem);
+      color: #888;
+      max-width: 500px;
+      line-height: 1.7;
+    }
+
+    .page-hero .hero-tag {
+      display: inline-block;
+      padding: 0.4rem 1.1rem;
+      border-radius: 999px;
+      background: var(--color-accent);
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ============================================================
+       NAV WRAPPER — fixed overlay, pointer-events: none by default
+       so the page behind is always clickable when menu is closed.
+    ============================================================ */
+    .nav {
+      position: fixed;
+      inset: 0;
+      /* top/right/bottom/left = 0 */
+      width: 100%;
+      height: 100vh;
+      z-index: 100;
+      pointer-events: none;
+      /* CRITICAL: allow clicks to pass through */
+    }
+
+    /* ============================================================
+       HEADER — logo + toggle button
+       These always get pointer-events: all so they're always clickable.
+    ============================================================ */
+    .nav-header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2rem 2.5rem;
+      z-index: 200;
+      /* Above menu overlay */
+      pointer-events: none;
+      /* Children below will override */
+    }
+
+    .nav-logo {
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--color-logo);
+      text-transform: uppercase;
+      pointer-events: all;
+      /* Always clickable */
+      cursor: pointer;
+      text-decoration: none;
+      mix-blend-mode: difference;
+      /* Inverts color over dark menu bg */
+      color: #fff;
+    }
+
+    /* Toggle button: stacks "Menu" and "Close" labels */
+    .nav-toggle {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      cursor: pointer;
+      pointer-events: all;
+      /* Always clickable */
+      z-index: 300;
+    }
+
+    .nav-toggle span {
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      line-height: 1;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      mix-blend-mode: difference;
+      color: #fff;
+    }
+
+    /* "Close" starts hidden beneath "Menu" */
+    .nav-toggle .toggle-close {
+      position: absolute;
+      top: 0;
+      right: 0;
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    /* When menu is open, swap labels */
+    .nav-toggle.is-open .toggle-menu {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+
+    .nav-toggle.is-open .toggle-close {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Hamburger icon bars */
+    .nav-toggle-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 6px;
+      align-items: flex-end;
+    }
+
+    .nav-toggle-bars span {
+      display: block;
+      height: 2px;
+      background: #fff;
+      mix-blend-mode: difference;
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+
+    .bar-long {
+      width: 28px;
+    }
+
+    .bar-short {
+      width: 18px;
+    }
+
+    .nav-toggle.is-open .bar-long {
+      width: 18px;
+    }
+
+    .nav-toggle.is-open .bar-short {
+      width: 28px;
+    }
+
+    /* ============================================================
+       MENU OVERLAY — holds SVG + content
+    ============================================================ */
+    .menu {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      /* toggled to 'all' when open */
+    }
+
+    /* ============================================================
+       SVG BACKGROUND — the morphing shape that wipes the screen
+       z-index: -1 keeps it behind the menu text content.
+    ============================================================ */
+    .menu-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      /* Behind menu content */
+    }
+
+    /* ============================================================
+       MENU CONTENT — two-column layout inside the overlay
+    ============================================================ */
+    .menu-content {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: stretch;
+      padding: 7rem 2.5rem 3rem;
+      /* Top pad clears the header */
+      gap: 3rem;
+      opacity: 1;
+      /* Hidden until the SVG dark shape fully covers the screen.
+         This prevents menu text from bleeding onto the light page bg
+         during the wipe animation or before GSAP initialises. */
+      visibility: hidden;
+    }
+
+    /* Left column — brand info, socials, etc. */
+    .menu-info {
+      flex: 0 0 260px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      gap: 2.5rem;
+      padding-bottom: 1rem;
+    }
+
+    .info-block p {
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--color-info-label);
+      margin-bottom: 0.6rem;
+    }
+
+    .info-block a,
+    .info-block address {
+      display: block;
+      font-style: normal;
+      font-size: 0.95rem;
+      font-weight: 400;
+      color: var(--color-info-text);
+      text-decoration: none;
+      line-height: 1.8;
+      transition: color 0.2s;
+    }
+
+    /* Only apply hover on devices that support it */
+    @media (hover: hover) and (pointer: fine) {
+      .info-block a:hover {
+        color: var(--color-link-hover);
+      }
+    }
+
+    /* Right column — giant nav links */
+    .menu-links {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 0.2rem;
+    }
+
+    /* Each nav item wrapper — clips the character reveal */
+    .menu-link-item {
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* The giant navigation link */
+    .menu-link-item a {
+      display: block;
+      font-size: clamp(2.6rem, 7vw, 6.5rem);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      color: var(--color-link);
+      text-decoration: none;
+      text-transform: uppercase;
+      cursor: pointer;
+      position: relative;
+      transition: color 0.3s ease;
+    }
+
+    /* Hover color shift — scoped to real pointer devices */
+    @media (hover: hover) and (pointer: fine) {
+      .menu-link-item a:hover {
+        color: var(--color-accent);
+      }
+    }
+
+    /* Each character split by JS gets this class */
+    .char {
+      display: inline-block;
+      /* Initial state set by GSAP in JS */
+    }
+
+    /* ============================================================
+       ACCENT DOT — small decorative dot next to certain links
+    ============================================================ */
+    .menu-link-item a .dot {
+      display: inline-block;
+      width: 0.5em;
+      height: 0.5em;
+      border-radius: 50%;
+      background: var(--color-accent);
+      vertical-align: super;
+      margin-left: 0.1em;
+      font-size: 0.4em;
+      opacity: 0.8;
+    }
+
+    /* ============================================================
+       FOOTER STRIP at bottom of menu
+    ============================================================ */
+    .menu-footer {
+      position: absolute;
+      bottom: 2rem;
+      left: 2.5rem;
+      right: 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 1rem;
+      /* Also hidden until SVG covers screen — same reason as .menu-content */
+      visibility: hidden;
+    }
+
+    .menu-footer span {
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.25);
+      letter-spacing: 0.08em;
+    }
+
+    /* ============================================================
+       RESPONSIVE
+    ============================================================ */
+
+    /* Tablet: stack columns */
+    @media (max-width: 768px) {
+      .menu-content {
+        flex-direction: column;
+        padding: 6rem 1.5rem 5rem;
+        gap: 2rem;
+        overflow-y: auto;
+      }
+
+      .menu-info {
+        flex: none;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        order: 2;
+        /* Info below links on mobile */
+        padding-bottom: 3rem;
+      }
+
+      .menu-links {
+        order: 1;
+      }
+
+      .menu-link-item a {
+        font-size: clamp(2.2rem, 10vw, 4rem);
+      }
+
+      .nav-header {
+        padding: 1.5rem;
+      }
+    }
+
+    /* Mobile */
+    @media (max-width: 480px) {
+      .menu-link-item a {
+        font-size: clamp(2rem, 12vw, 3.2rem);
+      }
+
+      .menu-footer {
+        flex-direction: column;
+        gap: 0.4rem;
+        align-items: flex-start;
+        left: 1.5rem;
+        right: 1.5rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ============================================================
+       PAGE CONTENT (behind the menu)
+  ============================================================ -->
+  <main class="page-hero">
+    <span class="hero-tag">✦ Creative Dev</span>
+    <h2>Morphing SVG<br />Fullscreen Menu</h2>
+    <p>Click the "Menu" toggle in the top-right corner to experience the curved SVG wipe animation with elastic
+      character reveals.</p>
+  </main>
+
+  <!-- ============================================================
+       NAV — the fixed overlay wrapper
+  ============================================================ -->
+  <div class="nav" id="nav">
+
+    <!-- Header: logo + toggle -->
+    <div class="nav-header">
+
+      <a class="nav-logo" href="#">Studio&nbsp;RIU</a>
+
+      <div class="nav-toggle" id="nav-toggle">
+        <!-- Hamburger bars -->
+        <div class="nav-toggle-bars">
+          <span class="bar-long"></span>
+          <span class="bar-short"></span>
+        </div>
+        <!-- Text labels swap on open/close -->
+        <span class="toggle-menu">Menu</span>
+        <span class="toggle-close">Close</span>
+      </div>
+
+    </div><!-- /nav-header -->
+
+    <!-- Menu overlay -->
+    <div class="menu" id="menu">
+
+      <!-- SVG morphing background shape (single layer) -->
+      <svg class="menu-svg" viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <!--
+          #menu-path: Single <path> animated via GSAP.
+
+          KEY DESIGN DECISION — path command consistency:
+          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          GSAP morphs SVG paths by interpolating between matching commands.
+          ALL paths in a morph group MUST share the exact same command
+          sequence (same types in the same order).
+
+          OPEN group uses:  M  L  L  Q  Z   (curve at the BOTTOM edge)
+          CLOSE group uses: M  Q  L  L  Z   (curve at the TOP edge)
+
+          We switch between groups with gsap.set() (instant, no morph),
+          so the different structures never conflict.
+        -->
+        <path id="menu-path" fill="#1a1a1a" />
+      </svg>
+
+      <!-- Two-column menu content -->
+      <div class="menu-content">
+
+        <!-- LEFT: Brand / contact info -->
+        <aside class="menu-info" id="menu-info">
+
+          <div class="info-block">
+            <p>Socials</p>
+            <a href="#">Instagram</a>
+            <a href="#">Twitter / X</a>
+            <a href="#">Dribbble</a>
+          </div>
+
+          <div class="info-block">
+            <p>Contact</p>
+            <address>
+              <a href="mailto:hello@studio-riu.com">hello@studio-riu.com</a>
+            </address>
+          </div>
+
+          <div class="info-block">
+            <p>Location</p>
+            <address>Mumbai, India</address>
+          </div>
+
+        </aside><!-- /menu-info -->
+
+        <!-- RIGHT: Giant navigation links -->
+        <nav class="menu-links" id="menu-links" aria-label="Main navigation">
+
+          <div class="menu-link-item">
+            <a href="#" data-text="Work">Work<span class="dot"></span></a>
+          </div>
+
+          <div class="menu-link-item">
+            <a href="#" data-text="Studio">Studio</a>
+          </div>
+
+          <div class="menu-link-item">
+            <a href="#" data-text="Services">Services</a>
+          </div>
+
+          <div class="menu-link-item">
+            <a href="#" data-text="Journal">Journal</a>
+          </div>
+
+          <div class="menu-link-item">
+            <a href="#" data-text="Contact">Contact</a>
+          </div>
+
+        </nav><!-- /menu-links -->
+
+      </div><!-- /menu-content -->
+
+      <!-- Footer strip -->
+      <div class="menu-footer">
+        <span>© 2026 Studio RIU</span>
+        <span>Creative Development</span>
+      </div>
+
+    </div><!-- /menu -->
+
+  </div><!-- /nav -->
+
+
+  <script>
+    /* ============================================================
+       CONFIGURATION — easy to customize at a glance
+    ============================================================ */
+    const CONFIG = {
+      // --- SVG wipe timing (seconds) ---
+      sweepDuration: 0.8,       // Total time for the SVG to cover the screen
+
+      // --- Character animation ---
+      charDuration: 0.8,        // Each character's settle time
+      charStagger: 0.02,        // Delay between characters (creates wave)
+      charEase: "power4.out",   // Smooth deceleration — no jitter
+
+      // --- Info panel animation ---
+      infoDuration: 0.5,
+      infoStagger: 0.06,
+
+      // --- Close speed ---
+      closeSweepDuration: 0.7,  // Total time for the SVG to exit
+    };
+
+    /* ============================================================
+       SVG PATH STATES
+       ~~~~~~~~~~~~~~~~
+       We use TWO separate groups of paths (open vs close) because
+       the curve is on a different edge for each direction.
+
+       OPEN: Bottom edge sweeps downward, curve at bottom
+       ─────────────────────────────────────────────────
+       Command structure: M L L Q Z
+         M  0  0        → top-left corner (fixed)
+         L  100 0       → top-right corner (fixed)
+         L  100 [Y]     → bottom-right (sweeps down)
+         Q  50  [CY]    → curve control (leads the sweep)
+            0   [Y]     → bottom-left (sweeps down)
+         Z              → close path
+
+       The curve control point (CY) is AHEAD of the corners (Y),
+       which creates a gentle curved leading edge as the shape
+       sweeps down. Once fully open, CY = Y = 100 = flat bottom.
+
+       CLOSE: Top edge sweeps downward, curve at top
+       ──────────────────────────────────────────────
+       Command structure: M Q L L Z
+         M  0  [Y]      → top-left (sweeps down to exit)
+         Q  50 [CY]     → curve control (trails behind)
+            100 [Y]     → top-right (sweeps down)
+         L  100 100     → bottom-right (fixed)
+         L  0   100     → bottom-left (fixed)
+         Z              → close path
+
+       ViewBox is "0 0 100 100" so all coords are 0–100.
+    ============================================================ */
+    const PATHS = {
+      // ── OPEN GROUP (M L L Q Z) ──
+
+      // Hidden: flat line at top — zero height, invisible
+      openHidden: "M 0 0 L 100 0 L 100 0 Q 50 0 0 0 Z",
+
+      // Curved: bottom-right/left at ~40%, curve control reaches ~58%
+      // This is GENTLE — only 18 units of curve ahead of the corners
+      // (old version used 150 units which caused the harsh snap)
+      openCurved: "M 0 0 L 100 0 L 100 40 Q 50 58 0 40 Z",
+
+      // Full: rectangle covering the entire screen
+      // Q at 100 = flat bottom = clean rectangle
+      openFull: "M 0 0 L 100 0 L 100 100 Q 50 100 0 100 Z",
+
+
+      // ── CLOSE GROUP (M Q L L Z) ──
+
+      // Start: full screen rectangle (visually same as openFull)
+      // Different command structure but same visual shape
+      closeStart: "M 0 0 Q 50 0 100 0 L 100 100 L 0 100 Z",
+
+      // Curved: top edge at ~60%, curve trails at ~40%
+      // Creates a satisfying "snap-up" retraction feel
+      closeCurved: "M 0 60 Q 50 40 100 60 L 100 100 L 0 100 Z",
+
+      // Hidden: flat line at bottom — fully off-screen
+      closeHidden: "M 0 100 Q 50 100 100 100 L 100 100 L 0 100 Z",
+    };
+
+    /* ============================================================
+       ELEMENT REFERENCES
+    ============================================================ */
+    const toggle = document.getElementById('nav-toggle');
+    const menu = document.getElementById('menu');
+    const menuPath = document.getElementById('menu-path');
+    const infoEl = document.getElementById('menu-info');
+
+    /* ============================================================
+       UTILITY: Split text into individual <span class="char"> elements
+       This replicates what GSAP's paid SplitText plugin does — for free!
+
+       How it works:
+       1. We grab each anchor's text nodes (ignoring child elements like .dot)
+       2. We wrap every character in a <span class="char">
+       3. GSAP can then animate each .char independently
+    ============================================================ */
+    function splitChars() {
+      // Select every anchor inside .menu-links
+      const links = document.querySelectorAll('.menu-links a');
+
+      links.forEach(link => {
+        // Walk child nodes; only split text nodes (not element nodes like <span.dot>)
+        const nodes = Array.from(link.childNodes);
+
+        nodes.forEach(node => {
+          // nodeType 3 = TEXT_NODE
+          if (node.nodeType !== 3) return;
+
+          const text = node.textContent;
+          if (!text.trim()) return; // Skip whitespace-only nodes
+
+          // Build a fragment containing one <span> per character
+          const fragment = document.createDocumentFragment();
+
+          text.split('').forEach(char => {
+            const span = document.createElement('span');
+            span.classList.add('char');
+            // Use a non-breaking space for actual space characters
+            // so they don't collapse when inline-block
+            span.textContent = char === ' ' ? '\u00A0' : char;
+            fragment.appendChild(span);
+          });
+
+          // Replace the original text node with our new spans
+          link.replaceChild(fragment, node);
+        });
+      });
+    }
+
+    /* ============================================================
+       INITIALIZATION
+       Called once on page load to set up starting states.
+    ============================================================ */
+    function init() {
+      // 1. Split all link text into .char spans
+      splitChars();
+
+      // 2. Set the SVG path to its "completely hidden at top" state
+      gsap.set(menuPath, { attr: { d: PATHS.openHidden } });
+
+      // 3. Characters start below their position, invisible
+      //    They'll rise up during openMenu()
+      gsap.set('.char', { y: 60, opacity: 0 });
+
+      // 4. Push info blocks down and hide them
+      gsap.set(infoEl.querySelectorAll('.info-block'), {
+        y: 30,
+        opacity: 0,
+      });
+
+      // 5. Also hide menu-footer
+      gsap.set('.menu-footer', { opacity: 0 });
+    }
+
+    /* ============================================================
+       STATE MANAGEMENT
+    ============================================================ */
+    let isOpen = false;
+    let activeTimeline = null; // Track running animation so we can kill it
+
+    /* ============================================================
+       OPEN MENU ANIMATION — "Curved Sweep Down"
+       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       How it works (3 smooth phases):
+
+       Phase 1: SVG sweeps from top → 40% with a gentle curved
+                leading edge (the Q control at 58% runs ahead of
+                the corner points at 40% — subtle organic feel).
+
+       Phase 2: SVG continues from 40% → 100%. The curve flattens
+                naturally as the corners catch up. Smooth deceleration.
+
+       Phase 3: Content reveals — characters rise up from below in
+                a staggered wave, info blocks fade in gently.
+
+       Why this is smooth (vs the old version):
+       ─────────────────────────────────────────
+       OLD: Path went hidden → EXTREME bulge (Q 50 150) → full
+            The 150-unit curve had to snap back to 0 — harsh jump.
+
+       NEW: Path goes hidden → gentle curve (Q 50 58) → full
+            Only 18 units of curve, which naturally flattens. No snap.
+    ============================================================ */
+    function openMenu() {
+      // Kill any currently running animation to avoid conflicts
+      if (activeTimeline) activeTimeline.kill();
+
+      // Allow the menu overlay to receive pointer events
+      menu.style.pointerEvents = 'all';
+
+      // Build the open timeline
+      const tl = gsap.timeline();
+      activeTimeline = tl;
+
+      // Start from hidden state (in case we're interrupting a close)
+      tl.set(menuPath, { attr: { d: PATHS.openHidden } })
+
+        // --- Phase 1: Curved leading edge sweeps to ~40% ---
+        // power2.in: gentle acceleration (starts slow, speeds up)
+        .to(menuPath, {
+          attr: { d: PATHS.openCurved },
+          duration: CONFIG.sweepDuration * 0.4,
+          ease: "power2.in",
+        })
+
+        // --- Phase 2: Shape fills the rest of the screen ---
+        // power2.out: smooth deceleration (fast then gentle stop)
+        // The curve at Q 50 58 → Q 50 100 naturally flattens
+        .to(menuPath, {
+          attr: { d: PATHS.openFull },
+          duration: CONFIG.sweepDuration * 0.6,
+          ease: "power2.out",
+        })
+
+        // --- REVEAL GATE: Make content visible ONLY after the SVG
+        //     has fully covered the screen. Prevents text bleeding
+        //     onto the light page background during the wipe. ---
+        .set(['.menu-content', '.menu-footer'], { visibility: 'visible' })
+
+        // --- Phase 3: Characters rise up in a wave ---
+        // Each character starts at y:60 (below) and slides to y:0
+        // Stagger creates a flowing cascade across each word
+        // power4.out: fast start, long gentle settle — very smooth
+        .to('.char', {
+          y: 0,
+          opacity: 1,
+          duration: CONFIG.charDuration,
+          stagger: CONFIG.charStagger,
+          ease: CONFIG.charEase,
+        }, "-=0.25") // Start slightly before wipe completes
+
+        // --- Phase 4: Info blocks fade up ---
+        .to(infoEl.querySelectorAll('.info-block'), {
+          y: 0,
+          opacity: 1,
+          duration: CONFIG.infoDuration,
+          stagger: CONFIG.infoStagger,
+          ease: "power3.out",
+        }, "<0.08") // 0.08s after characters begin
+
+        // --- Footer fades in ---
+        .to('.menu-footer', {
+          opacity: 1,
+          duration: 0.4,
+          ease: "power2.out",
+        }, "<0.15");
+    }
+
+    /* ============================================================
+       CLOSE MENU ANIMATION — "Snap-Up Retract"
+       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       The exit pulls the shape upward off the screen.
+       Intentionally feels snappier than the entrance —
+       matches user expectation when dismissing UI.
+
+       Phase 1: Content fades out quickly (chars drop, info fades)
+       Phase 2: SVG top edge sweeps down with a trailing curve
+       Phase 3: Shape exits fully off the bottom of the screen
+    ============================================================ */
+    function closeMenu() {
+      // Kill any currently running animation
+      if (activeTimeline) activeTimeline.kill();
+
+      const tl = gsap.timeline({
+        onComplete: () => {
+          // After close animation finishes:
+          // 1. Remove pointer events from the overlay
+          menu.style.pointerEvents = 'none';
+
+          // 2. Reset characters below for next open
+          gsap.set('.char', { y: 60, opacity: 0 });
+
+          // 3. Reset info blocks ready for next open
+          gsap.set(infoEl.querySelectorAll('.info-block'), {
+            y: 30,
+            opacity: 0,
+          });
+
+          // 4. Reset footer opacity
+          gsap.set('.menu-footer', { opacity: 0 });
+
+          // 5. Re-hide content so it doesn't bleed on the next open's
+          //    wipe animation (mirrors the CSS initial state)
+          gsap.set(['.menu-content', '.menu-footer'], { visibility: 'hidden' });
+        }
+      });
+      activeTimeline = tl;
+
+      // --- Instantly switch to close path structure ---
+      // (visually identical rectangle, different SVG command order)
+      gsap.set(menuPath, { attr: { d: PATHS.closeStart } });
+
+      // --- Phase 1: Blast characters and info out quickly ---
+      tl.to('.char', {
+        opacity: 0,
+        y: -30,
+        duration: 0.22,
+        stagger: 0.006,
+        ease: "power3.in",
+      })
+
+        .to(infoEl.querySelectorAll('.info-block'), {
+          y: -20,
+          opacity: 0,
+          duration: 0.18,
+          stagger: 0.04,
+          ease: "power2.in",
+        }, "<")
+
+        .to('.menu-footer', {
+          opacity: 0,
+          duration: 0.12,
+        }, "<")
+
+        // --- Phase 2: Top edge sweeps down with trailing curve ---
+        // The curve at Q 50 40 trails BEHIND the corners at 60,
+        // creating a satisfying concave retraction shape
+        .to(menuPath, {
+          attr: { d: PATHS.closeCurved },
+          duration: CONFIG.closeSweepDuration * 0.45,
+          ease: "power3.in",
+        }, "-=0.08")
+
+        // --- Phase 3: Shape exits fully off-screen ---
+        .to(menuPath, {
+          attr: { d: PATHS.closeHidden },
+          duration: CONFIG.closeSweepDuration * 0.55,
+          ease: "power2.out",
+        });
+    }
+
+    /* ============================================================
+       TOGGLE HANDLER
+    ============================================================ */
+    toggle.addEventListener('click', () => {
+      isOpen = !isOpen;
+
+      // Swap the CSS class to animate the button label
+      toggle.classList.toggle('is-open', isOpen);
+
+      if (isOpen) {
+        openMenu();
+      } else {
+        closeMenu();
+      }
+    });
+
+    /* ============================================================
+       Close menu when a nav link is clicked (UX: navigate on click)
+    ============================================================ */
+    document.querySelectorAll('.menu-links a').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault(); // Remove this if you have real href targets
+        if (isOpen) {
+          isOpen = false;
+          toggle.classList.remove('is-open');
+          closeMenu();
+        }
+      });
+    });
+
+    /* ============================================================
+       RUN INIT on DOM ready
+    ============================================================ */
+    init();
+
+  </script>
+</body>
+
+</html>

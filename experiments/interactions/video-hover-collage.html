@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glitched | Kinetic Media Reveal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Inter:wght@300;600&display=swap" rel="stylesheet">
+    <!-- Scripts for Global Nav -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #050505;
+            --text-color: #fff;
+            --accent-color: #ff3c00; /* Neon Orange-Red */
+            --font-display: 'Syncopate', sans-serif;
+            --font-ui: 'Inter', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: none; /* Hide default cursor for custom experience */
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-ui);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1000px;
+        }
+
+        /* SVG Distort Filter */
+        .distort-filter {
+            position: absolute;
+            width: 0;
+            height: 0;
+        }
+
+        /* Custom Cursor Dot */
+        #cursor-dot {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 8px;
+            height: 8px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1000;
+            mix-blend-mode: difference;
+        }
+
+        /* Main Menu Styling */
+        .menu {
+            list-style: none;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .menu-item {
+            position: relative;
+            transform-style: preserve-3d;
+        }
+
+        .menu-link {
+            font-family: var(--font-display);
+            font-size: 7vw;
+            font-weight: 700;
+            text-transform: uppercase;
+            text-decoration: none;
+            color: transparent;
+            -webkit-text-stroke: 1px rgba(255, 255, 255, 0.3);
+            line-height: 0.9;
+            transition: color 0.3s, -webkit-text-stroke 0.3s;
+            display: block;
+            pointer-events: auto;
+        }
+
+        .menu-link:hover {
+            color: var(--text-color);
+            -webkit-text-stroke: 1px var(--text-color);
+        }
+
+        /* Kinetic Media Follower */
+        .follower-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 450px;
+            height: 300px;
+            pointer-events: none;
+            z-index: 5;
+            will-change: transform;
+            /* Applying the SVG turbulance filter on the parent for a "liquid" look */
+            filter: url('#liquid');
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .follower-inner {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #222;
+            overflow: hidden;
+            border-radius: 2px;
+            opacity: 0;
+            transform: scale(0.8) rotateX(10deg);
+            will-change: transform, opacity;
+            box-shadow: 0 50px 100px rgba(0,0,0,0.8);
+        }
+
+        /* Collage Item Offsets */
+        .collage-1 { z-index: 3; }
+        .collage-2 { z-index: 2; transform: translate(20px, 20px) scale(0.8) rotate(5deg); }
+        .collage-3 { z-index: 1; transform: translate(-20px, -20px) scale(0.8) rotate(-5deg); }
+
+        .follower-inner img, 
+        .follower-inner video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: saturate(1.5) contrast(1.2);
+        }
+
+        /* Secondary "Ghost" Follower for Echo Effect */
+        .follower-echo {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 450px;
+            height: 300px;
+            border: 1px solid var(--accent-color);
+            opacity: 0;
+            z-index: 4;
+            pointer-events: none;
+        }
+
+        /* Background Kinetic Grid */
+        .grid-bg {
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            transform: rotateX(60deg);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            .follower-wrapper, .follower-echo, #cursor-dot { display: none; }
+            .menu-link { font-size: 15vw; color: white; -webkit-text-stroke: 0; }
+        }
+
+        /* --- GLOBAL NAVBAR STYLES --- */
+        .dropdown {
+            position: absolute;
+            bottom: calc(100% + 15px);
+            left: 50%;
+            transform: translateX(-50%);
+            width: 240px;
+            background: rgba(28, 28, 28, 0.98);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+            padding: 0.75rem;
+            display: none;
+            opacity: 0;
+            flex-direction: column;
+            gap: 4px;
+            z-index: 3100;
+            border-radius: 16px;
+        }
+        .dropdown::before { content: ''; position: absolute; bottom: -20px; left: 0; width: 100%; height: 20px; }
+        .dropdown::after {
+            content: ''; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
+            border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 6px solid rgba(28, 28, 28, 0.98);
+        }
+        .dropdown-link {
+            text-decoration: none; color: rgba(255, 255, 255, 0.8); font-size: 0.8rem; padding: 8px 12px;
+            border-radius: 6px; transition: background 0.3s, color 0.3s, transform 0.2s; display: flex; justify-content: space-between; align-items: center;
+        }
+        .dropdown-link:hover { background: rgba(255, 255, 255, 0.05); transform: translateX(5px); color: #C8A8F5; }
+        .dropdown-link::after { content: '→'; opacity: 0; transition: opacity 0.3s; }
+        .dropdown-link:hover::after { opacity: 1; }
+        .global-menu-item { position: relative; display: flex; align-items: center; height: 100%; padding: 0 4px; }
+        .global-nav-link.has-dropdown::after { content: '▾'; font-size: 0.6rem; margin-left: 6px; opacity: 0.5; transition: transform 0.3s; }
+        .global-menu-item:hover .global-nav-link.has-dropdown::after { transform: rotate(180deg); opacity: 1; }
+        .global-nav-container.is-active { overflow: visible; }
+        .global-nav-container {
+            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+            height: 60px; width: 60px; background-color: #2D2D2D; color: white; border-radius: 30px;
+            display: flex; align-items: center; justify-content: flex-start; padding: 0 10px; cursor: grab;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2); z-index: 3000; overflow: hidden; white-space: nowrap;
+        }
+        .global-nav-toggle {
+            width: 40px; height: 40px; min-width: 40px; background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 4px; cursor: pointer;
+        }
+        .global-nav-line { width: 14px; height: 2px; background-color: white; border-radius: 1px; }
+        .global-nav-content { display: flex; align-items: center; gap: 24px; padding: 0 24px; opacity: 0; visibility: hidden; }
+        .global-nav-link {
+            text-decoration: none; color: white; font-size: 0.8rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.6; transition: opacity 0.3s;
+        }
+        .global-nav-link:hover { opacity: 1; }
+        .back-link {
+            position: fixed; bottom: 40px; left: 40px; text-decoration: none; color: white;
+            font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;
+            border-bottom: 1px solid white; padding-bottom: 5px; opacity: 0.4; transition: opacity 0.3s; z-index: 500;
+        }
+        .back-link:hover { opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <svg class="distort-filter">
+        <defs>
+            <filter id="liquid">
+                <feTurbulence type="fractalNoise" baseFrequency="0.01 0.01" numOctaves="1" result="warp"></feTurbulence>
+                <feDisplacementMap in="SourceGraphic" in2="warp" scale="30" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
+            </filter>
+        </defs>
+    </svg>
+
+    <div id="cursor-dot"></div>
+    <div class="grid-bg" id="grid"></div>
+
+    <ul class="menu">
+        <li class="menu-item">
+            <a href="#" class="menu-link magnetic" data-type="image" data-src="../../assets/images/hero-bg.png,../../assets/images/gallery-1.png,../../assets/images/hero-1.png">Vortex</a>
+        </li>
+        <li class="menu-item">
+            <a href="#" class="menu-link magnetic" data-type="video" data-src="https://videos.pexels.com/video-files/8133333/8133333-hd_1920_1080_24fps.mp4,https://videos.pexels.com/video-files/7578469/7578469-hd_1920_1080_25fps.mp4,https://videos.pexels.com/video-files/3840449/3840449-hd_1920_1080_25fps.mp4">Kinetic</a>
+        </li>
+        <li class="menu-item">
+            <a href="#" class="menu-link magnetic" data-type="video" data-src="https://videos.pexels.com/video-files/7578469/7578469-hd_1920_1080_25fps.mp4,https://videos.pexels.com/video-files/3840449/3840449-hd_1920_1080_25fps.mp4,../../assets/images/gallery-2.png">Rupture</a>
+        </li>
+        <li class="menu-item">
+            <a href="#" class="menu-link magnetic" data-type="image" data-src="../../assets/images/hero-2.png,../../assets/images/gallery-3.png,../../assets/images/hero-3.png">Static</a>
+        </li>
+    </ul>
+
+    <div class="follower-wrapper" id="follower">
+        <div class="follower-inner collage-1" id="inner1"></div>
+        <div class="follower-inner collage-2" id="inner2"></div>
+        <div class="follower-inner collage-3" id="inner3"></div>
+    </div>
+    <div class="follower-echo" id="echo"></div>
+
+    <a href="../../index.html" class="back-link">Back to Index</a>
+
+    <div class="global-nav-container" id="adaptiveMenu">
+        <div class="global-nav-toggle" id="globalMenuToggle">
+            <span class="global-nav-line" id="gLine1"></span>
+            <span class="global-nav-line" id="gLine2"></span>
+        </div>
+        <div class="global-nav-content" id="globalMenuContent">
+            <a href="../../index.html" class="global-nav-link" style="opacity: 1;">Home</a>
+            <div class="global-menu-item">
+                <span class="global-nav-link has-dropdown">Interactions</span>
+                <div class="dropdown">
+                    <a href="../../experiments/interactions/video-hover-collage.html" class="dropdown-link">Video Collage</a>
+                    <a href="../../experiments/interactions/cursor-media-reveal-premium.html" class="dropdown-link">Premium Cursor</a>
+                    <a href="../../experiments/interactions/rogue-hover-reveal.html" class="dropdown-link">Rogue Hover</a>
+                    <a href="../../experiments/interactions/physics-service-reveal.html" class="dropdown-link">Physics Service</a>
+                    <a href="../../experiments/interactions/terminal-scramble-grid.html" class="dropdown-link">Terminal Scramble</a>
+                    <a href="../../experiments/interactions/infinite-3d-tunnel.html" class="dropdown-link">3D Tunnel</a>
+                </div>
+            </div>
+            <div class="global-menu-item">
+                <span class="global-nav-link has-dropdown">Navigation</span>
+                <div class="dropdown">
+                    <a href="../../experiments/navigation/draggable-adaptive-menu.html" class="dropdown-link">Draggable Menu</a>
+                    <a href="../../experiments/navigation/navigation-system.html" class="dropdown-link">Nav System</a>
+                    <a href="../../experiments/navigation/radial-aperture-reveal.html" class="dropdown-link">Aperture Reveal</a>
+                    <a href="../../experiments/navigation/push-down-reveal.html" class="dropdown-link">Push-Down</a>
+                </div>
+            </div>
+            <div class="global-menu-item">
+                <span class="global-nav-link has-dropdown">Reveals</span>
+                <div class="dropdown">
+                    <a href="../../experiments/reveals/cinematic-preloader-reveal.html" class="dropdown-link">Preloader Reveal</a>
+                    <a href="../../experiments/reveals/fluid-mask-reveal.html" class="dropdown-link">Fluid Mask</a>
+                    <a href="../../experiments/reveals/hero-orchestrated-reveal.html" class="dropdown-link">Orchestrated Hero</a>
+                    <a href="../../experiments/reveals/staggered-grid-reveal.html" class="dropdown-link">Grid Reveal</a>
+                    <a href="../../experiments/reveals/staggered-folder-reveal.html" class="dropdown-link">Folder Reveal</a>
+                    <a href="../../experiments/reveals/center-out-clip-path-image-reveal.html" class="dropdown-link">Clip Path</a>
+                    <a href="../../experiments/reveals/cinematic-zoom-reveal.html" class="dropdown-link">Zoom Reveal</a>
+                </div>
+            </div>
+            <div class="global-menu-item">
+                <span class="global-nav-link has-dropdown">Scroll</span>
+                <div class="dropdown">
+                    <a href="../../experiments/scroll/sticky-scroll-cards.html" class="dropdown-link">Sticky Cards</a>
+                    <a href="../../experiments/scroll/cinematic-scroll-slider-v3.html" class="dropdown-link">Scroll Slider V3</a>
+                    <a href="../../experiments/scroll/pinned-hero.html" class="dropdown-link">Pinned Hero V1</a>
+                    <a href="../../experiments/scroll/pinned-hero-v2.html" class="dropdown-link">Pinned Hero V2</a>
+                    <a href="../../experiments/scroll/scroll-card-split-flip.html" class="dropdown-link">Split Flip</a>
+                    <a href="../../experiments/scroll/wave-scroll.html" class="dropdown-link">Wave Scroll</a>
+                </div>
+            </div>
+            <div class="global-menu-item">
+                <span class="global-nav-link has-dropdown">Sliders</span>
+                <div class="dropdown">
+                    <a href="../../experiments/sliders/awwwards-cinematic-slider.html" class="dropdown-link">Cinematic V1</a>
+                    <a href="../../experiments/sliders/awwwards-cinematic-slider-v2.html" class="dropdown-link">Cinematic V2</a>
+                    <a href="../../experiments/sliders/arc-slider.html" class="dropdown-link">Arc Slider</a>
+                    <a href="../../experiments/sliders/circular-text-gallery.html" class="dropdown-link">Circular Gallery</a>
+                    <a href="../../experiments/sliders/mood-layouts.html" class="dropdown-link">Mood Layouts</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const follower = document.getElementById('follower');
+            const inners = [
+                document.getElementById('inner1'),
+                document.getElementById('inner2'),
+                document.getElementById('inner3')
+            ];
+            const echo = document.getElementById('echo');
+            const dot = document.getElementById('cursor-dot');
+            const grid = document.getElementById('grid');
+            const links = document.querySelectorAll('.magnetic');
+
+            // --- State for Velocity Tracking ---
+            let mouse = { x: 0, y: 0 };
+            let vel = { x: 0, y: 0 };
+
+            // --- GSAP Setters (Reduced duration for better "alignment") ---
+            const followX = gsap.quickTo(follower, "x", { duration: 0.15, ease: "power2.out" });
+            const followY = gsap.quickTo(follower, "y", { duration: 0.15, ease: "power2.out" });
+            const echoX = gsap.quickTo(echo, "x", { duration: 0.4, ease: "power1.out" });
+            const echoY = gsap.quickTo(echo, "y", { duration: 0.4, ease: "power1.out" });
+            const dotX = gsap.quickTo(dot, "x", { duration: 0.05, ease: "none" });
+            const dotY = gsap.quickTo(dot, "y", { duration: 0.05, ease: "none" });
+
+            window.addEventListener('mousemove', (e) => {
+                const clientX = e.clientX;
+                const clientY = e.clientY;
+
+                // Update velocity
+                vel.x = clientX - mouse.x;
+                vel.y = clientY - mouse.y;
+
+                mouse.x = clientX;
+                mouse.y = clientY;
+
+                // Sync cursor dot (Center alignment fix: subtract radius)
+                dotX(clientX - 4);
+                dotY(clientY - 4);
+
+                // Sync Follower (Center alignment fix: subtract half-width/half-height)
+                followX(clientX - 225);
+                followY(clientY - 150);
+
+                // Sync Echo
+                echoX(clientX - 225);
+                echoY(clientY - 150);
+
+                // Grid Tilt Effect
+                gsap.to(grid, {
+                    x: (clientX - window.innerWidth/2) * 0.1,
+                    y: (clientY - window.innerHeight/2) * 0.1,
+                    duration: 1
+                });
+
+                // Momentum Skew & Scale applied to all collage items
+                const skewX = gsap.utils.clamp(-20, 20, vel.x * 0.4);
+                const scale = 1 + Math.abs(vel.x + vel.y) * 0.001;
+
+                inners.forEach(inner => {
+                    gsap.to(inner, {
+                        skewX: skewX,
+                        scaleX: scale,
+                        duration: 0.4,
+                        ease: "power2.out"
+                    });
+                });
+            });
+
+            // --- Magnetic Link Logic ---
+            links.forEach(link => {
+                link.addEventListener('mousemove', (e) => {
+                    const rect = link.getBoundingClientRect();
+                    const centerX = rect.left + rect.width / 2;
+                    const centerY = rect.top + rect.height / 2;
+                    const deltaX = e.clientX - centerX;
+                    const deltaY = e.clientY - centerY;
+
+                    gsap.to(link, {
+                        x: deltaX * 0.3,
+                        y: deltaY * 0.3,
+                        duration: 0.3,
+                        ease: "power2.out"
+                    });
+                });
+
+                link.addEventListener('mouseleave', () => {
+                    gsap.to(link, { x: 0, y: 0, duration: 0.5, ease: "elastic.out(1, 0.3)" });
+                });
+
+                // Hover Media Logic (Collage Implementation)
+                link.addEventListener('mouseenter', () => {
+                    const srcs = link.dataset.src.split(',');
+                    const type = link.dataset.type;
+
+                    inners.forEach((inner, index) => {
+                        inner.innerHTML = '';
+                        const src = srcs[index] || srcs[0]; // Fallback to first if not enough srcs
+                        
+                        // Check if specific source is an image or video based on extension if not specified
+                        const isImage = src.toLowerCase().endsWith('.png') || src.toLowerCase().endsWith('.jpg') || type === 'image';
+
+                        if (isImage) {
+                            inner.innerHTML = `<img src="${src}">`;
+                        } else {
+                            inner.innerHTML = `<video src="${src}" autoplay muted loop></video>`;
+                        }
+
+                        // Animate entry for collage items
+                        gsap.to(inner, { 
+                            opacity: 1, 
+                            scale: index === 0 ? 1 : 0.8, // Main item is larger
+                            x: index === 1 ? 40 : index === 2 ? -40 : 0, // Staggered offsets
+                            y: index === 1 ? 40 : index === 2 ? -40 : 0,
+                            duration: 0.5,
+                            delay: index * 0.05,
+                            ease: "power2.out"
+                        });
+                    });
+
+                    gsap.to(echo, { opacity: 0.3, duration: 0.4 });
+                });
+
+                link.addEventListener('mouseleave', () => {
+                    inners.forEach(inner => {
+                        gsap.to(inner, { opacity: 0, scale: 0.8, x: 0, y: 0, duration: 0.3 });
+                    });
+                    gsap.to(echo, { opacity: 0, duration: 0.3 });
+                });
+            });
+
+            // Turbulent Distort Animation
+            const turb = document.querySelector('feTurbulence');
+            gsap.to(turb, {
+                attr: { baseFrequency: "0.02 0.03" },
+                duration: 2,
+                repeat: -1,
+                yoyo: true,
+                ease: "sine.inOut"
+            });
+        });
+
+        // --- GLOBAL NAVBAR LOGIC ---
+        const gMenu = document.getElementById('adaptiveMenu');
+        const gToggle = document.getElementById('globalMenuToggle');
+        const gContent = document.getElementById('globalMenuContent');
+        const gl1 = document.getElementById('gLine1');
+        const gl2 = document.getElementById('gLine2');
+        let gIsOpen = false; let gIsDragging = false;
+
+        const gMenuTl = gsap.timeline({ paused: true });
+        gMenuTl.to(gMenu, { width: "auto", maxWidth: "90vw", borderRadius: "30px", duration: 0.6, ease: "back.out(1.5)" })
+               .to(gl1, { y: 3, rotate: 45, duration: 0.3 }, 0)
+               .to(gl2, { y: -3, rotate: -45, duration: 0.3 }, 0)
+               .to(gContent, { autoAlpha: 1, duration: 0.3 }, 0.2);
+
+        gToggle.addEventListener('click', () => {
+            if (gIsDragging) return;
+            gIsOpen ? gMenuTl.reverse() : gMenuTl.play();
+            gMenu.classList.toggle('is-active', !gIsOpen);
+            gIsOpen = !gIsOpen;
+        });
+
+        const gMenuItems = document.querySelectorAll('.global-menu-item');
+        gMenuItems.forEach(item => {
+            const dropdown = item.querySelector('.dropdown');
+            const links = dropdown.querySelectorAll('.dropdown-link');
+            const link = item.querySelector('.global-nav-link');
+            const show = () => { if (!gIsOpen) return; gsap.set(dropdown, { display: 'flex' }); gsap.to(dropdown, { opacity: 1, y: -10, duration: 0.4, ease: "power3.out" }); gsap.fromTo(links, { x: -10, opacity: 0 }, { x: 0, opacity: 1, duration: 0.3, stagger: 0.05, ease: "power2.out", delay: 0.1 }); };
+            const hide = () => { gsap.to(dropdown, { opacity: 0, y: 0, duration: 0.3, ease: "power3.in", onComplete: () => gsap.set(dropdown, { display: 'none' }) }); };
+            if (!window.matchMedia('(hover: none)').matches) { item.addEventListener('mouseenter', show); item.addEventListener('mouseleave', hide); }
+            else { link.addEventListener('click', (e) => { e.preventDefault(); const v = gsap.getProperty(dropdown, "display") === "flex"; v ? hide() : show(); }); document.addEventListener('touchstart', (e) => { if (!item.contains(e.target)) hide(); }); }
+        });
+
+        Draggable.create(gMenu, { type: "x,y", onDragStart: () => gIsDragging = true, onDragEnd: () => setTimeout(() => gIsDragging = false, 100) });
+    </script>
+</body>
+</html>

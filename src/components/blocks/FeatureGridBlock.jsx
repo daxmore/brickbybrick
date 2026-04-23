@@ -1,10 +1,11 @@
 import React from 'react';
 import { useProject } from '../../context/ProjectContext';
-import { Zap, Shield, Smartphone, Globe, Heart, Clock } from 'lucide-react';
+import { ICON_LIST } from '../IconPickerModal';
+import PhysicsRevealFeatures from './features/PhysicsRevealFeatures';
+import SnakeCardFeatures from './features/SnakeCardFeatures';
+import FolderRevealFeatures from './features/FolderRevealFeatures';
 
-const icons = { Zap, Shield, Smartphone, Globe, Heart, Clock };
-
-const FeatureGridBlock = ({ id, props, editMode }) => {
+const StandardFeatures = ({ id, props, editMode }) => {
   const { updateBlockProps, selectedBlockId, setSelectedBlockId } = useProject();
   const isSelected = selectedBlockId === id;
 
@@ -30,14 +31,14 @@ const FeatureGridBlock = ({ id, props, editMode }) => {
     >
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
         {items.map((item, i) => {
-          const IconComp = icons[item.icon] || Zap;
+          const Icon = ICON_LIST[item.icon] || ICON_LIST['Zap'];
           return (
             <div key={i} className="flex flex-col items-start">
               <div 
                 className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 shadow-sm"
                 style={{ backgroundColor: 'var(--accent-color)', color: 'var(--primary-color)' }}
               >
-                <IconComp size={24} />
+                <Icon size={24} />
               </div>
               <h3 
                 contentEditable={editMode}
@@ -63,6 +64,21 @@ const FeatureGridBlock = ({ id, props, editMode }) => {
       </div>
     </section>
   );
+};
+
+const FeatureGridBlock = (blockProps) => {
+  const { props } = blockProps;
+  
+  switch (props.variant) {
+    case 'physics':
+      return <PhysicsRevealFeatures {...blockProps} />;
+    case 'snake':
+      return <SnakeCardFeatures {...blockProps} />;
+    case 'folder':
+      return <FolderRevealFeatures {...blockProps} />;
+    default:
+      return <StandardFeatures {...blockProps} />;
+  }
 };
 
 export default FeatureGridBlock;

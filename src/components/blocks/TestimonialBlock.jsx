@@ -41,10 +41,14 @@ const TestimonialBlock = ({ id, props, editMode }) => {
             </p>
             <div className="flex items-center gap-4">
               <div 
-                className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-white shadow-sm"
-                style={{ backgroundColor: 'var(--primary-color)' }}
+                className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-white shadow-sm overflow-hidden bg-slate-100"
+                style={{ backgroundColor: item.image ? 'transparent' : 'var(--primary-color)' }}
               >
-                {item.avatar}
+                {item.image ? (
+                  <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                ) : (
+                  item.avatar
+                )}
               </div>
               <div>
                 <h4 

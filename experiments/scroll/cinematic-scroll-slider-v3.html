@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture of Motion | Cinematic Slider V3</title>
+    
+    <!-- Reliable Dependencies -->
+    <link rel="stylesheet" href="../../assets/global-nav.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="../../assets/global-nav.js"></script>
+    <script src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js"></script>
+    <script src="https://unpkg.com/split-type"></script>
+
+    <!-- Cinematic Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@900&family=Space+Mono&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #050505;
+            --text: #ffffff;
+            --font-main: 'Inter', sans-serif;
+            --font-mono: 'Space Mono', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        main * { cursor: none; } /* Only hide cursor in main content area to keep nav usable */
+        
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* 1. Custom Cursor */
+        .custom-cursor {
+            position: fixed;
+            top: 0; left: 0;
+            width: 12px; height: 12px;
+            background-color: #fff;
+            border-radius: 50%;
+            z-index: 9999;
+            pointer-events: none;
+            mix-blend-mode: difference;
+            display: flex; align-items: center; justify-content: center;
+            will-change: transform, width, height;
+        }
+        .cursor-text {
+            color: #000;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 900;
+            opacity: 0;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        /* Legacy Nav Removed */
+
+        /* Structure */
+        section { height: 100vh; width: 100%; position: relative; }
+        .intro, .outro {
+            display: flex; align-items: center; justify-content: center;
+            background: var(--bg); z-index: 10;
+        }
+        .intro h2, .outro h2 { font-size: 1rem; opacity: 0.2; letter-spacing: 0.5rem; text-transform: uppercase; }
+
+        /* Slider Section */
+        .slider { overflow: hidden; background: #000; }
+
+        .slider-images { position: absolute; inset: 0; z-index: 1; }
+        .slider-images::after {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(90deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 60%, transparent 100%);
+            z-index: 5;
+        }
+
+        .parallax-wrapper {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            opacity: 0; overflow: hidden; will-change: opacity;
+        }
+
+        .slide-img-el {
+            position: absolute;
+            width: 100%; height: 120%; /* Space for Y parallax */
+            top: -10%; left: 0;
+            object-fit: cover;
+            will-change: transform;
+        }
+
+        .slider-titles {
+            position: absolute; left: 8%; top: 50%;
+            transform: translateY(-50%); z-index: 10; width: 80%;
+        }
+        .slide-title-el {
+            position: absolute; top: 50%; left: 0;
+            transform: translateY(-50%); opacity: 0; width: 100%;
+        }
+        .slide-title-el h1 {
+            font-size: clamp(3rem, 10vw, 8rem);
+            text-transform: uppercase; letter-spacing: -0.2rem; line-height: 0.85;
+        }
+
+        /* Typography Masks */
+        .line-mask { overflow: hidden; display: block; }
+        .char { display: inline-block; will-change: transform; }
+
+        /* UI Indicators */
+        .slider-indicator {
+            position: absolute; right: 50px; top: 50%;
+            transform: translateY(-50%); z-index: 20;
+            display: flex; align-items: center; gap: 30px;
+        }
+        .indices-wrap {
+            display: flex; flex-direction: column; gap: 25px;
+            font-family: var(--font-mono); font-size: 0.7rem; align-items: flex-end;
+        }
+        .index-item {
+            display: flex; align-items: center; gap: 15px; opacity: 0.3;
+            position: relative;
+        }
+        .index-marker {
+            width: 20px; height: 1px; background: #fff;
+            transform: scaleX(0); transform-origin: right;
+        }
+
+        /* Thumbnail Preview */
+        .indicator-thumb {
+            position: absolute;
+            right: 140%; top: 50%; transform: translateY(-50%);
+            width: 100px; height: 60px;
+            border-radius: 4px; overflow: hidden;
+            opacity: 0; visibility: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            pointer-events: none;
+        }
+        .indicator-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+        .progress-bar {
+            width: 1px; height: 200px; background: rgba(255,255,255,0.1); position: relative;
+        }
+        .progress-fill {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff; transform: scaleY(0); transform-origin: top;
+        }
+
+        @media (max-width: 768px) {
+            * { cursor: auto; }
+            .custom-cursor { display: none; }
+            nav { padding: 20px; }
+            .slider-titles { left: 5%; width: 90%; }
+            .slider-indicator { right: 20px; }
+            .indicator-thumb { display: none; }
+        }
+
+        html.lenis, html.lenis body { height: auto; }
+        .lenis.lenis-smooth { scroll-behavior: auto !important; }
+    </style>
+</head>
+<body>
+
+    <div class="custom-cursor" id="cursor"><span class="cursor-text">EXPLORE</span></div>
+
+    <!-- Legacy Nav Div Removed -->
+
+    <main>
+        <section class="intro"><h2>SCROLL TO DISCOVER</h2></section>
+
+        <section class="slider" id="slider-main">
+            <div class="slider-images" id="image-container"></div>
+            <div class="slider-titles" id="title-container"></div>
+            
+            <div class="slider-indicator">
+                <div class="indices-wrap" id="indices-container"></div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="outro"><h2>JOURNEY CONCLUDED</h2></section>
+    </main>
+
+    <script>
+        const slides = [
+            { title: "Geometric Voids", image: "https://images.unsplash.com/photo-1773332585956-2d0e8ac80cb6?auto=format&w=1920" },
+            { title: "Ethereal Flow", image: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&w=1920" },
+            { title: "Urban Monolith", image: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&w=1920" },
+            { title: "Brutalist Core", image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&w=1920" },
+            { title: "Infinite Pulse", image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&w=1920" }
+        ];
+
+        let lenis, masterTl;
+        const sliderEl = document.getElementById('slider-main');
+        const cursor = document.getElementById('cursor');
+        const cursorText = cursor.querySelector('.cursor-text');
+
+        function init() {
+            gsap.registerPlugin(ScrollTrigger, Draggable);
+            initGlobalNav('../../');
+
+            // 1. Lenis Engine
+            lenis = new Lenis({ lerp: 0.1 });
+            lenis.on('scroll', ScrollTrigger.update);
+            gsap.ticker.add((time) => lenis.raf(time * 1000));
+
+            renderContent();
+            setupCursor();
+            buildMasterTimeline();
+        }
+
+        function renderContent() {
+            const imgWrap = document.getElementById('image-container');
+            const titleWrap = document.getElementById('title-container');
+            const indicesWrap = document.getElementById('indices-container');
+
+            slides.forEach((slide, i) => {
+                // Images
+                const pWrap = document.createElement('div');
+                pWrap.className = 'parallax-wrapper';
+                pWrap.innerHTML = `<img src="${slide.image}" class="slide-img-el">`;
+                imgWrap.appendChild(pWrap);
+
+                // Titles
+                const tWrap = document.createElement('div');
+                tWrap.className = 'slide-title-el';
+                tWrap.innerHTML = `<h1>${slide.title}</h1>`;
+                titleWrap.appendChild(tWrap);
+
+                const split = new SplitType(tWrap.querySelector('h1'), { types: 'lines, chars' });
+                split.lines.forEach(line => {
+                    const mask = document.createElement('div');
+                    mask.className = 'line-mask';
+                    line.parentNode.insertBefore(mask, line);
+                    mask.appendChild(line);
+                });
+
+                // Title Hover
+                const chars = tWrap.querySelectorAll('.char');
+                tWrap.querySelector('h1').addEventListener('mouseenter', () => {
+                    gsap.to(chars, { y: -15, stagger: 0.02, duration: 0.3, yoyo: true, repeat: 1, ease: "power2.out" });
+                });
+
+                // Indices
+                const idx = (i + 1).toString().padStart(2, '0');
+                const item = document.createElement('div');
+                item.className = 'index-item';
+                item.innerHTML = `
+                    <div class="indicator-thumb"><img src="${slide.image}"></div>
+                    <div class="index-marker"></div>
+                    <span>${idx}</span>
+                `;
+                
+                // Index Interactivity
+                item.addEventListener('mouseenter', () => {
+                    gsap.to(item.querySelector('.indicator-thumb'), { autoAlpha: 1, x: -20, duration: 0.4, ease: "power3.out" });
+                    gsap.to(item, { opacity: 1, duration: 0.3 });
+                });
+                item.addEventListener('mouseleave', () => {
+                    gsap.to(item.querySelector('.indicator-thumb'), { autoAlpha: 0, x: 0, duration: 0.4, ease: "power3.in" });
+                    if (i !== Math.round(masterTl.progress() * (slides.length - 1))) {
+                        gsap.to(item, { opacity: 0.3, duration: 0.3 });
+                    }
+                });
+                item.addEventListener('click', () => {
+                    const st = masterTl.scrollTrigger;
+                    const target = st.start + (i * (st.end - st.start) / (slides.length - 1));
+                    lenis.scrollTo(target, { duration: 1.5 });
+                });
+
+                indicesWrap.appendChild(item);
+            });
+        }
+
+        function setupCursor() {
+            const xTo = gsap.quickTo(cursor, "left", { duration: 0.4, ease: "power3" });
+            const yTo = gsap.quickTo(cursor, "top", { duration: 0.4, ease: "power3" });
+
+            window.addEventListener('mousemove', (e) => {
+                xTo(e.clientX - cursor.offsetWidth/2);
+                yTo(e.clientY - cursor.offsetHeight/2);
+            });
+
+            document.getElementById('image-container').addEventListener('mouseenter', () => {
+                gsap.to(cursor, { width: 80, height: 80, duration: 0.4 });
+                gsap.to(cursorText, { opacity: 1, duration: 0.4 });
+            });
+            document.getElementById('image-container').addEventListener('mouseleave', () => {
+                gsap.to(cursor, { width: 12, height: 12, duration: 0.4 });
+                gsap.to(cursorText, { opacity: 0, duration: 0.4 });
+            });
+        }
+
+        function buildMasterTimeline() {
+            const totalTime = slides.length;
+            masterTl = gsap.timeline({
+                scrollTrigger: {
+                    trigger: ".slider",
+                    start: "top top",
+                    end: () => "+=" + (window.innerHeight * slides.length),
+                    pin: true,
+                    scrub: 0.5,
+                    invalidateOnRefresh: true
+                }
+            });
+
+            // Initial State Slide 1
+            gsap.set(".parallax-wrapper:nth-child(1)", { opacity: 1 });
+            gsap.set(".slide-img-el:nth-child(1)", { yPercent: 10 });
+            gsap.set(".slide-title-el:nth-child(1)", { opacity: 1 });
+            gsap.set(".index-item:nth-child(1)", { opacity: 1 });
+            gsap.set(".index-item:nth-child(1) .index-marker", { scaleX: 1 });
+
+            slides.forEach((_, i) => {
+                const pos = i;
+
+                // Continuous Image Parallax
+                masterTl.fromTo(`.parallax-wrapper:nth-child(${i+1}) .slide-img-el`, 
+                    { yPercent: 10 }, { yPercent: -10, ease: "none", duration: 1 }, pos);
+
+                // Global Progress
+                masterTl.to("#progress-fill", { scaleY: (i + 1) / slides.length, ease: "none", duration: 1 }, pos);
+
+                if (i < slides.length - 1) {
+                    // Transition Out Current
+                    masterTl.to(`.slide-title-el:nth-child(${i+1}) .line`, 
+                        { y: -60, opacity: 0, stagger: 0.02, ease: "none", duration: 0.4 }, pos + 0.6);
+                    
+                    masterTl.to(`.index-item:nth-child(${i+1})`, { opacity: 0.3, duration: 0.3 }, pos + 0.8);
+                    masterTl.to(`.index-item:nth-child(${i+1}) .index-marker`, { scaleX: 0, duration: 0.3 }, pos + 0.8);
+
+                    // Transition In Next
+                    masterTl.to(`.parallax-wrapper:nth-child(${i+2})`, 
+                        { opacity: 1, ease: "none", duration: 0.5 }, pos + 0.8);
+
+                    masterTl.set(`.slide-title-el:nth-child(${i+2})`, { opacity: 1 }, pos + 0.9);
+                    masterTl.fromTo(`.slide-title-el:nth-child(${i+2}) .line`, 
+                        { y: 100 }, { y: 0, stagger: 0.03, ease: "none", duration: 0.6 }, pos + 0.9);
+
+                    masterTl.to(`.index-item:nth-child(${i+2})`, { opacity: 1, duration: 0.3 }, pos + 0.9);
+                    masterTl.to(`.index-item:nth-child(${i+2}) .index-marker`, { scaleX: 1, duration: 0.3 }, pos + 0.9);
+                }
+            });
+        }
+
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

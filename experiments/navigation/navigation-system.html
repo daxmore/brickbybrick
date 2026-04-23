@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kinetic Beside | Premium Navigation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
+    <link rel="stylesheet" href="../../assets/global-nav.css">
+    <script src="../../assets/global-nav.js"></script>
+    <style>
+        :root {
+            --bg-menu: #f0f0f0;
+            --bg-page: #0a0a0a;
+            --header-h: 80px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-page);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            overflow-x: hidden;
+        }
+
+        .noise {
+            position: fixed;
+            inset: 0;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.05;
+            pointer-events: none;
+            z-index: 3000;
+        }
+
+        /* NAVBAR */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--header-h);
+            padding: 0 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 2000;
+        }
+
+        .logo {
+            font-size: 1.2rem;
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            color: #fff;
+            mix-blend-mode: difference;
+        }
+
+        .menu-toggle {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            z-index: 2100;
+            mix-blend-mode: difference;
+        }
+
+        .menu-toggle span {
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+        }
+
+        .hamburger {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .line {
+            width: 25px;
+            height: 2px;
+            background: #fff;
+            transition: all 0.4s ease;
+        }
+
+        /* MENU OVERLAY */
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: var(--bg-menu);
+            z-index: 1500;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
+            padding-left: 10vw;
+            /* Strict left alignment */
+        }
+
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            z-index: 10;
+            mix-blend-mode: difference;
+        }
+
+        .nav-link {
+            position: relative;
+            font-size: clamp(4rem, 12vw, 9rem);
+            font-weight: 900;
+            color: #fff;
+            text-decoration: none;
+            letter-spacing: -0.05em;
+            line-height: 0.85;
+            padding: 10px 0;
+            transition: skew 0.4s ease;
+            will-change: transform;
+        }
+
+        /* FLOATING PREVIEW (Offset to the right) */
+        .menu-preview {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 28vw;
+            height: 40vh;
+            z-index: 1;
+            /* Above background, but logic handles visibility */
+            pointer-events: none;
+            will-change: transform;
+            /* Offset to the right of the cursor so it sits in whitespace */
+            transform: translate(15%, -50%);
+        }
+
+        .img-wrapper {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            border-radius: 12px;
+            will-change: clip-path;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.15);
+        }
+
+        .img-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            will-change: transform, scale;
+        }
+
+        body.no-scroll {
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="noise"></div>
+
+    <header>
+        <div class="logo">KINETIC.</div>
+        <div class="menu-toggle" id="menuToggle">
+            <span>MENU</span>
+            <div class="hamburger">
+                <div class="line"></div>
+                <div class="line"></div>
+            </div>
+        </div>
+    </header>
+
+    <div class="menu-overlay" id="menuOverlay">
+        <!-- Floating Preview Offset to Right -->
+        <div class="menu-preview" id="previewContainer"></div>
+
+        <nav class="nav-links">
+            <a href="#" class="nav-link"
+                data-src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=1200">HOME</a>
+            <a href="#" class="nav-link"
+                data-src="https://images.unsplash.com/photo-1633167606207-d840b5070fc2?auto=format&fit=crop&q=80&w=1200">WORK</a>
+            <a href="#" class="nav-link"
+                data-src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=1200">INFO</a>
+            <a href="#" class="nav-link"
+                data-src="https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&q=80&w=1200">CONTACT</a>
+        </nav>
+    </div>
+
+    <div style="height: 200vh; padding: 150px 80px;">
+        <h1 style="color: #fff; font-size: 4rem; font-weight: 900; letter-spacing: -0.04em;">CRAFTING
+            DIGITAL<br>EXPERIENCES.</h1>
+    </div>
+
+    <script>
+        gsap.registerPlugin(Draggable);
+        initGlobalNav('../../');
+
+        const menuToggle = document.getElementById('menuToggle');
+        const menuOverlay = document.getElementById('menuOverlay');
+        const previewContainer = document.getElementById('previewContainer');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const lines = document.querySelectorAll('.line');
+
+        let isMenuOpen = false;
+
+        // 1. FLOATING BESIDE LOGIC
+        window.addEventListener('mousemove', (e) => {
+            if (isMenuOpen) {
+                // Offset calculation to keep image in whitespace to the right
+                const offsetX = window.innerWidth * 0.15; // Shift right by 15% of width
+                gsap.to(previewContainer, {
+                    x: e.clientX + offsetX,
+                    y: e.clientY,
+                    duration: 0.9,
+                    ease: "power3.out"
+                });
+            }
+        });
+
+        // 2. MENU TOGGLE
+        function toggleMenu() {
+            if (!isMenuOpen) {
+                isMenuOpen = true;
+                document.body.classList.add('no-scroll');
+
+                const tl = gsap.timeline({ defaults: { ease: "expo.inOut", duration: 1.2 } });
+                tl.to(menuOverlay, { clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' })
+                    .to(lines[0], { rotate: 45, y: 4, duration: 0.5 }, 0)
+                    .to(lines[1], { rotate: -45, y: -4, duration: 0.5 }, 0)
+                    .fromTo(navLinks, { x: -60, opacity: 0 }, { x: 0, opacity: 1, stagger: 0.1, duration: 1 }, "-=0.6");
+
+            } else {
+                isMenuOpen = false;
+                document.body.classList.remove('no-scroll');
+                gsap.to(menuOverlay, { clipPath: 'polygon(0 0, 100% 0, 100% 0, 0 0)', duration: 1, ease: "expo.inOut" });
+                gsap.to(lines, { rotate: 0, y: 0, duration: 0.5 });
+            }
+        }
+
+        menuToggle.addEventListener('click', toggleMenu);
+
+        // 3. LINK HOVER (Skew + Bespoke Reveal)
+        navLinks.forEach(link => {
+            let wrapper, img, hoverTl;
+
+            link.addEventListener('mouseenter', () => {
+                wrapper = document.createElement('div');
+                wrapper.className = 'img-wrapper';
+                img = document.createElement('img');
+                img.src = link.getAttribute('data-src');
+                wrapper.appendChild(img);
+                previewContainer.appendChild(wrapper);
+
+                gsap.set(wrapper, { clipPath: 'polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%)' });
+                gsap.set(img, { scale: 1.5, opacity: 0 });
+
+                hoverTl = gsap.timeline({ defaults: { ease: "power4.out", duration: 0.8 } });
+                hoverTl.to(wrapper, { clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)' })
+                    .to(img, { opacity: 1, scale: 1 }, 0)
+                    .to(link, { skewX: -12, x: 30, duration: 0.4 }, 0); // Italic Skew + Push
+            });
+
+            link.addEventListener('mouseleave', () => {
+                if (hoverTl) hoverTl.kill();
+                const curW = wrapper;
+                gsap.to(img, { opacity: 0, scale: 1.2, duration: 0.4, onComplete: () => curW.remove() });
+                gsap.to(link, { skewX: 0, x: 0, duration: 0.4 });
+            });
+        });
+    </script>
+</body>
+
+</html>

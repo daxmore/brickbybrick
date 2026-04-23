@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG Snake Reveal Cards</title>
+    <link rel="stylesheet" href="../../assets/global-nav.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
+    <script src="../../assets/global-nav.js"></script>
+    <style>
+        :root {
+            --bg: #ececec;
+            --card-bg: #000000;
+            --text: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: #000;
+            font-family: 'Inter', system-ui, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2px; /* Tight grid like the screenshot */
+            width: 100%;
+            max-width: 1200px;
+            background: #ccc; /* Grid line color */
+            border: 1px solid #ccc;
+        }
+
+        .card {
+            position: relative;
+            aspect-ratio: 1/1;
+            background: #fff;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .card.dark { background: var(--card-bg); color: var(--text); }
+
+        .card-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 1.2s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .card:hover .card-img {
+            transform: scale(1.05);
+        }
+
+        /* SVG Swipe Layer */
+        .reveal-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .reveal-path {
+            fill: none;
+            stroke: #fff; /* The "paint" color */
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            will-change: stroke-dashoffset, stroke-width;
+        }
+
+        .card.white-reveal .reveal-path { stroke: #fff; }
+        .card.blue-reveal .reveal-path { stroke: #0055ff; }
+
+        /* Text Content */
+        .card-content {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        .card-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.02em;
+            overflow: hidden;
+        }
+
+        .word-wrapper {
+            display: inline-block;
+            overflow: hidden;
+            vertical-align: bottom;
+        }
+
+        .word {
+            display: inline-block;
+            will-change: transform;
+            transform: translateY(100%);
+        }
+
+        .card-tag {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 8px;
+            display: block;
+            opacity: 0;
+        }
+
+        /* Center Logo/Icon for some cards */
+        .center-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+            width: 150px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card-grid">
+        <!-- Card 1: Black with Circle Reveal -->
+        <div class="card dark white-reveal">
+            <img src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=800" class="card-img">
+            <svg class="reveal-svg" viewBox="0 0 500 500" preserveAspectRatio="none">
+                <!-- Snake path that sweeps diagonally -->
+                <path class="reveal-path" d="M -100,600 Q 100,500 250,250 T 600,-100" />
+            </svg>
+            <div class="card-content">
+                <span class="card-tag">Stellar</span>
+                <h2 class="card-title">Dark Matter</h2>
+            </div>
+        </div>
+
+        <!-- Card 2: Light with Blue Reveal -->
+        <div class="card blue-reveal">
+            <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800" class="card-img">
+            <svg class="reveal-svg" viewBox="0 0 500 500" preserveAspectRatio="none">
+                <path class="reveal-path" d="M 600,600 Q 400,100 250,250 T -100,-100" />
+            </svg>
+            <div class="card-content">
+                <span class="card-tag">Brand</span>
+                <h2 class="card-title" style="color:#fff">Rubi Identity</h2>
+            </div>
+        </div>
+
+        <!-- Card 3: Minimal Blue -->
+        <div class="card dark white-reveal" style="background:#0055ff">
+            <div class="center-content">
+                <svg viewBox="0 0 100 100" fill="currentColor">
+                    <path d="M20 20 L80 20 L80 80 L20 80 Z M40 40 L60 40 L60 60 L40 60 Z" />
+                </svg>
+            </div>
+            <svg class="reveal-svg" viewBox="0 0 500 500" preserveAspectRatio="none">
+                <path class="reveal-path" d="M -100,250 L 600,250" />
+            </svg>
+            <div class="card-content">
+                <span class="card-tag">Platform</span>
+                <h2 class="card-title">System UI</h2>
+            </div>
+        </div>
+
+        <!-- Card 4: High Contrast -->
+        <div class="card white-reveal">
+            <img src="https://images.unsplash.com/photo-1633167606207-d840b5070fc2?auto=format&fit=crop&q=80&w=800" class="card-img">
+            <svg class="reveal-svg" viewBox="0 0 500 500" preserveAspectRatio="none">
+                <path class="reveal-path" d="M 250,-100 L 250,600" />
+            </svg>
+            <div class="card-content">
+                <span class="card-tag">Motion</span>
+                <h2 class="card-title" style="color:#000">Fluid Flow</h2>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        gsap.registerPlugin(Draggable);
+        initGlobalNav('../../');
+
+        class SnakeCard {
+            constructor(el) {
+                this.el = el;
+                this.path = el.querySelector('.reveal-path');
+                this.title = el.querySelector('.card-title');
+                this.tag = el.querySelector('.card-tag');
+                this.timeline = null;
+
+                this.init();
+            }
+
+            init() {
+                // 1. Split Text
+                const words = this.title.textContent.split(' ');
+                this.title.innerHTML = '';
+                words.forEach(word => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'word-wrapper';
+                    const span = document.createElement('span');
+                    span.className = 'word';
+                    span.textContent = word + '\u00A0';
+                    wrapper.appendChild(span);
+                    this.title.appendChild(wrapper);
+                });
+                this.wordElements = this.title.querySelectorAll('.word');
+
+                // 2. Setup Path (The "Snake" Logic)
+                const length = this.path.getTotalLength();
+                gsap.set(this.path, {
+                    strokeDasharray: length,
+                    strokeDashoffset: length,
+                    strokeWidth: 0
+                });
+
+                // 3. Events
+                this.el.addEventListener('mouseenter', () => this.enter());
+                this.el.addEventListener('mouseleave', () => this.leave());
+            }
+
+            enter() {
+                if (this.timeline) this.timeline.kill();
+                this.timeline = gsap.timeline({ defaults: { ease: "power2.inOut" } });
+
+                const length = this.path.getTotalLength();
+
+                this.timeline
+                    .to(this.path, {
+                        strokeDashoffset: 0,
+                        strokeWidth: 1200, // Blow up the width to "fill" the card
+                        duration: 0.8
+                    })
+                    .to(this.wordElements, {
+                        y: 0,
+                        duration: 0.6,
+                        stagger: 0.05,
+                        ease: "expo.out"
+                    }, "-=0.4")
+                    .to(this.tag, {
+                        opacity: 0.6,
+                        duration: 0.4
+                    }, "-=0.6");
+            }
+
+            leave() {
+                if (this.timeline) {
+                    // Retract the snake backward
+                    const length = this.path.getTotalLength();
+                    gsap.to(this.path, {
+                        strokeDashoffset: -length, // Push it out the other side
+                        strokeWidth: 0,
+                        duration: 0.6,
+                        ease: "power2.inOut"
+                    });
+
+                    gsap.to(this.wordElements, {
+                        y: "100%",
+                        duration: 0.4,
+                        stagger: 0.02
+                    });
+
+                    gsap.to(this.tag, {
+                        opacity: 0,
+                        duration: 0.3
+                    });
+                }
+            }
+        }
+
+        document.querySelectorAll('.card').forEach(card => new SnakeCard(card));
+    </script>
+</body>
+</html>

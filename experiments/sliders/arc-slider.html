@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arc Slider</title>
+    <link rel="stylesheet" href="../../assets/global-nav.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
+    <script src="../../assets/global-nav.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            /* Apply a modern, deep gradient theme */
+            background: radial-gradient(circle at center, #2a2a35 0%, #0d0d12 100%);
+            color: #fff;
+            cursor: grab; /* Indicate the entire area is draggable */
+            user-select: none; /* Prevent text selection */
+            -webkit-user-select: none; /* Safari compatibility */
+        }
+
+        body:active {
+            cursor: grabbing; /* Change cursor while dragging */
+        }
+
+        .slider {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            perspective: 1200px;
+        }
+
+        .slide {
+            position: absolute;
+            will-change: transform, width, height, opacity;
+            left: 50%;
+            top: 50%;
+            transform-origin: center center;
+            border-radius: 16px;
+            /* Add a subtle glass border and deeper shadow */
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+            overflow: hidden;
+            background: #000;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none; /* Prevent drag issues */
+            user-select: none;
+            -webkit-user-select: none;
+            transition: opacity 0.4s ease, filter 0.4s ease;
+            filter: brightness(0.6) grayscale(20%);
+        }
+
+        /* Highlight the slide closest to the center */
+        .slide.active img {
+            filter: brightness(1.1) grayscale(0%);
+        }
+
+        #slide-title {
+            position: absolute;
+            bottom: 8%;
+            width: 100%;
+            text-align: center;
+            pointer-events: none;
+            font-size: 3rem;
+            font-weight: 300;
+            letter-spacing: 12px;
+            z-index: 100;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.9);
+            /* Subtle background behind text to ensure legibility */
+            background: linear-gradient(90deg, transparent, rgba(0,0,0,0.3), transparent);
+            padding: 20px 0;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div class="slider" id="slider">
+        <!-- Slides will be injected here by JS -->
+    </div>
+    <div id="slide-title">Slide Title</div>
+    
+    <!-- GSAP for smooth animations -->
+    <!-- GSAP Lib moved to head -->
+    <script>
+        gsap.registerPlugin(Draggable);
+        initGlobalNav('../../');
+
+        const slider = document.getElementById('slider');
+        const titleEl = document.getElementById('slide-title');
+
+        const config = {
+            slideWidth: 600,  // Wider layout for images
+            slideHeight: 400, // 3:2 aspect ratio landscape
+            gap: 650,         // More space between wider images
+            arcDepth: 250,    // Deeper vertical arc curve
+            scrollEase: 0.05,
+            numSlides: 30     // Increase to 30 images
+        };
+
+        const slides = [];
+
+        // Setup: Create 30 slides
+        for (let i = 0; i < config.numSlides; i++) {
+            const slide = document.createElement('div');
+            slide.className = 'slide';
+            
+            // Set width and center the slide
+            slide.style.width = `${config.slideWidth}px`;
+            slide.style.height = `${config.slideHeight}px`;
+            slide.style.marginLeft = `${-config.slideWidth / 2}px`;
+            slide.style.marginTop = `${-config.slideHeight / 2}px`;
+            
+            const img = document.createElement('img');
+            // Using a new seed to grab fresh, high-res 800x533 images
+            img.src = `https://picsum.photos/seed/${i + 150}/800/533`;
+            slide.appendChild(img);
+            
+            slider.appendChild(slide);
+            
+            // Store slide element and its custom title
+            slides.push({
+                element: slide,
+                index: i,
+                title: `VISTA ${String(i + 1).padStart(2, '0')}` // e.g. VISTA 01
+            });
+        }
+
+        let currentScroll = 0;
+        let targetScroll = 0;
+        const trackWidth = config.gap * config.numSlides;
+
+        function lerp(start, end, factor) {
+            return start + (end - start) * factor;
+        }
+
+        function wrap(value, max) {
+            return ((value % max) + max) % max;
+        }
+
+        function update() {
+            // Smoothing: lerp currentScroll towards targetScroll
+            currentScroll = lerp(currentScroll, targetScroll, config.scrollEase);
+            
+            let closestIndex = 0;
+            let minDistance = Infinity;
+
+            // Track center is halfway across the track
+            const halfTrack = trackWidth / 2;
+            const windowHalf = window.innerWidth / 2;
+
+            slides.forEach((slideObj, i) => {
+                // Calculate raw position based on scroll and index
+                let rawPos = i * config.gap - currentScroll;
+                
+                // Wrap position within track width so it loops seamlessly
+                let wrappedPos = wrap(rawPos + halfTrack, trackWidth) - halfTrack;
+                
+                // Find closest slide to center to update title and filter styles
+                if (Math.abs(wrappedPos) < minDistance) {
+                    minDistance = Math.abs(wrappedPos);
+                    closestIndex = i;
+                }
+
+                // Distance normalized between roughly -1.5 and 1.5 across the screen width
+                let normalizedDist = wrappedPos / windowHalf;
+                normalizedDist = Math.max(-1.5, Math.min(1.5, normalizedDist));
+
+                // --- Arc Physics ---
+                const x = wrappedPos;
+                
+                // Spread the cosine wave over a wider area by dividing the multiplier (PI / 3 instead of PI / 2)
+                const cosValue = Math.cos(normalizedDist * Math.PI / 3); 
+                
+                // Lower Y-value based on distance from center
+                const y = (1 - cosValue) * config.arcDepth;
+
+                // Shrink scale as it gets further from the center
+                const scale = 0.5 + 0.5 * cosValue;
+                
+                // Add dynamic rotation to give it a "cards fanning out" feel
+                const rotation = normalizedDist * 12;
+
+                const opacity = 0.2 + 0.8 * cosValue;
+                const zIndex = Math.round(cosValue * 100);
+
+                // Toggle active class to trigger CSS brightness filters
+                if (Math.abs(wrappedPos) < config.gap / 2.5) {
+                    slideObj.element.classList.add('active');
+                } else {
+                    slideObj.element.classList.remove('active');
+                }
+
+                // DOM Updates using GSAP
+                gsap.set(slideObj.element, {
+                    x: x,
+                    y: y,
+                    scale: scale,
+                    rotationZ: rotation,
+                    zIndex: zIndex,
+                    opacity: opacity
+                });
+            });
+
+            // Update the title dynamically based on closest slide
+            titleEl.innerText = slides[closestIndex].title;
+
+            requestAnimationFrame(update);
+        }
+
+        // Input: Wheel
+        window.addEventListener('wheel', (e) => {
+            targetScroll += e.deltaY * 1.5; // Multiplier for faster desktop scrolling
+        });
+
+        // Input: Dragging (Mouse & Touch)
+        let isDragging = false;
+        let startX = 0;
+
+        window.addEventListener('pointerdown', (e) => {
+            isDragging = true;
+            startX = e.clientX;
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (!isDragging) return;
+            const currentX = e.clientX;
+            const deltaX = startX - currentX;
+            
+            // Adjust drag sensitivity multiplier
+            targetScroll += deltaX * 2.0; 
+            
+            startX = currentX;
+        });
+
+        window.addEventListener('pointerup', () => {
+            isDragging = false;
+        });
+
+        window.addEventListener('pointercancel', () => {
+            isDragging = false;
+        });
+
+        // Start the animation loop
+        update();
+    </script>
+</body>
+</html>

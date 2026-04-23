@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Center-Out Reveal | Portfolio Effect</title>
+    <link rel="stylesheet" href="../../assets/global-nav.css">
+    <!-- GSAP Core (Free Version) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
+    <script src="../../assets/global-nav.js"></script>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --text: #ffffff;
+            --font-main: 'Inter', system-ui, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-main);
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            align-items: flex-end; /* As requested: list at bottom */
+            overflow: hidden;
+        }
+
+        /* 2. CSS & LAYERING (CRITICAL) */
+        .clients-preview {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50vw;
+            height: 60vh;
+            z-index: 1;
+            pointer-events: none; /* Mandatory: don't block text hovers */
+            background: #111; /* Fallback/Base */
+        }
+
+        .clients-list {
+            position: relative;
+            z-index: 10;
+            mix-blend-mode: difference; /* Critical: Inverts text over images */
+            color: #fff;
+            padding: 40px;
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .client-name {
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: -0.04em;
+            cursor: pointer;
+            opacity: 0.4;
+            transition: opacity 0.3s;
+        }
+
+        .client-name:hover {
+            opacity: 1;
+        }
+
+        /* Dynamically created elements */
+        .client-img-wrapper {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            will-change: clip-path;
+        }
+
+        .client-img-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            will-change: transform, opacity;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. HTML ARCHITECTURE -->
+    <div class="clients-preview" id="previewContainer">
+        <!-- Images injected here via JS -->
+    </div>
+
+    <div class="clients-list">
+        <div class="client-name" data-src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=1200">AETHER</div>
+        <div class="client-name" data-src="https://images.unsplash.com/photo-1633167606207-d840b5070fc2?auto=format&fit=crop&q=80&w=1200">SYNTHETIC</div>
+        <div class="client-name" data-src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=1200">KINETIC</div>
+        <div class="client-name" data-src="https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&q=80&w=1200">VORTEX</div>
+        <div class="client-name" data-src="https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&q=80&w=1200">PULSE</div>
+    </div>
+
+    <script>
+        /**
+         * 3. JAVASCRIPT INITIALIZATION
+         */
+        // Global Navigation
+        gsap.registerPlugin(Draggable);
+        initGlobalNav('../../');
+
+        const previewContainer = document.getElementById('previewContainer');
+        const clientNames = document.querySelectorAll('.client-name');
+
+        clientNames.forEach(client => {
+            let wrapper, img, tl;
+
+            /**
+             * 4. THE MOUSE-ENTER LOGIC (Reveal Animation)
+             */
+            client.addEventListener('mouseenter', () => {
+                // Create new elements
+                wrapper = document.createElement('div');
+                wrapper.className = 'client-img-wrapper';
+                
+                img = document.createElement('img');
+                img.src = client.getAttribute('data-src');
+                
+                wrapper.appendChild(img);
+                previewContainer.appendChild(wrapper);
+
+                // Initial GSAP State: Center point clip-path
+                gsap.set(wrapper, { 
+                    clipPath: 'polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%)' 
+                });
+                
+                gsap.set(img, { 
+                    scale: 1.25, 
+                    opacity: 0 
+                });
+
+                // The Reveal Timeline
+                tl = gsap.timeline({ defaults: { ease: "power3.out", duration: 0.6 }});
+
+                tl.to(wrapper, {
+                    clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)'
+                })
+                .to(img, {
+                    opacity: 1,
+                    scale: 1
+                }, 0); // Simultaneous
+            });
+
+            /**
+             * 5. THE MOUSE-LEAVE LOGIC (Cleanup)
+             */
+            client.addEventListener('mouseleave', () => {
+                if (tl) tl.kill(); // Stop existing reveal
+
+                // Local reference for onComplete to prevent removal of wrong element
+                const currentWrapper = wrapper;
+                const currentImg = img;
+
+                gsap.to(currentImg, {
+                    opacity: 0,
+                    duration: 0.4,
+                    onComplete: () => {
+                        if (currentWrapper) currentWrapper.remove();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

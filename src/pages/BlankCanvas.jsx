@@ -1,5 +1,6 @@
 import React from 'react';
 import { useProject } from '../context/ProjectContext';
+import { Reorder, useDragControls } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
 import NavbarBlock from '../components/blocks/NavbarBlock';
 import HeroBlock from '../components/blocks/HeroBlock';
@@ -10,7 +11,14 @@ import TestimonialBlock from '../components/blocks/TestimonialBlock';
 import FAQBlock from '../components/blocks/FAQBlock';
 import ContactBlock from '../components/blocks/ContactBlock';
 import LogoCloudBlock from '../components/blocks/LogoCloudBlock';
-import { Trash2, ArrowUp, ArrowDown, Copy, Plus, X, Eye, EyeOff, Monitor, Smartphone, Tablet, Layout, Code } from 'lucide-react';
+import TeamBlock from '../components/blocks/TeamBlock';
+import GalleryBlock from '../components/blocks/GalleryBlock';
+import BlogListBlock from '../components/blocks/BlogListBlock';
+import InteractiveCaseStudyBlock from '../components/blocks/InteractiveCaseStudyBlock';
+import StatsBlock from '../components/blocks/StatsBlock';
+import NewsletterBlock from '../components/blocks/NewsletterBlock';
+import EditorialBlock from '../components/blocks/EditorialBlock';
+import { Trash2, ArrowUp, ArrowDown, Copy, Plus, X, Eye, EyeOff, Monitor, Smartphone, Tablet, Layout, Code, GripVertical, Menu, Image, MessageSquare, HelpCircle, Users, BookOpen, Briefcase, Hash, Mail, FileText } from 'lucide-react';
 
 const BLOCK_MAP = {
   navbar: NavbarBlock,
@@ -21,7 +29,14 @@ const BLOCK_MAP = {
   testimonials: TestimonialBlock,
   faq: FAQBlock,
   contact: ContactBlock,
-  logos: LogoCloudBlock
+  logos: LogoCloudBlock,
+  team: TeamBlock,
+  gallery: GalleryBlock,
+  blogList: BlogListBlock,
+  caseStudy: InteractiveCaseStudyBlock,
+  stats: StatsBlock,
+  newsletter: NewsletterBlock,
+  editorial: EditorialBlock
 };
 
 const UnknownBlock = ({ type }) => (
@@ -32,11 +47,26 @@ const UnknownBlock = ({ type }) => (
 
 const BlockWrapper = ({ block, index, total, editMode }) => {
   const { reorderBlocks, deleteBlock, duplicateBlock, addBlock, previewMode } = useProject();
+  const controls = useDragControls();
 
   const BlockComponent = BLOCK_MAP[block.type] || UnknownBlock;
 
+  if (previewMode) {
+    return (
+      <div className="relative group/block">
+        <BlockComponent id={block.id} props={block.props || {}} editMode={false} />
+      </div>
+    );
+  }
+
   return (
-    <div className="relative group/block">
+    <Reorder.Item 
+      value={block} 
+      id={block.id}
+      dragListener={false}
+      dragControls={controls}
+      className="relative group/block bg-white"
+    >
       {/* Insert Before */}
       {editMode && !previewMode && (
         <button 
@@ -51,6 +81,15 @@ const BlockWrapper = ({ block, index, total, editMode }) => {
       {/* Block Controls */}
       {editMode && !previewMode && (
         <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover/block:opacity-100 transition-opacity z-30 bg-white/95 p-1 rounded-lg border border-[#c7cad5] shadow-xl backdrop-blur-sm">
+          <button
+            className="p-1.5 hover:bg-slate-100 rounded text-slate-600 transition-colors cursor-grab active:cursor-grabbing"
+            onPointerDown={(e) => controls.start(e)}
+            style={{ touchAction: "none" }}
+            title="Drag to reorder"
+          >
+            <GripVertical size={14} />
+          </button>
+          <div className="w-[1px] bg-[#e9eaef] mx-0.5" />
           <button 
             disabled={index === 0}
             onClick={(e) => { e.stopPropagation(); reorderBlocks(index, index - 1); }}
@@ -84,12 +123,12 @@ const BlockWrapper = ({ block, index, total, editMode }) => {
       <div className="animate-entry">
         <BlockComponent id={block.id} props={block.props || {}} editMode={editMode && !previewMode} />
       </div>
-    </div>
+    </Reorder.Item>
   );
 };
 
 const BlankCanvas = () => {
-  const { currentPage, deviceView, setDeviceView, addBlock, previewMode, setPreviewMode } = useProject();
+  const { currentPage, deviceView, setDeviceView, addBlock, previewMode, setPreviewMode, setBlocks } = useProject();
   const [showLibrary, setShowLibrary] = React.useState(false);
   const [insertIndex, setInsertIndex] = React.useState(null);
 
@@ -163,15 +202,30 @@ const BlankCanvas = () => {
         {/* Canvas Area */}
         <div className={`flex-1 overflow-y-auto flex justify-center items-start scroll-smooth transition-all duration-500 ${previewMode ? 'p-0' : 'p-12'}`}>
           <div className={`bg-white shadow-[0_0_50px_-12px_rgba(0,0,0,0.1)] overflow-hidden min-h-[85vh] transition-all duration-500 w-full ${deviceWidths[deviceView]} ${previewMode ? 'border-0' : 'border border-[#c7cad5]'}`}>
-            {(currentPage.blocks || []).map((block, i) => (
-              <BlockWrapper 
-                key={block.id} 
-                block={block} 
-                index={i} 
-                total={(currentPage.blocks || []).length} 
-                editMode={true} 
-              />
-            ))}
+            
+            {!previewMode ? (
+              <Reorder.Group axis="y" values={currentPage.blocks || []} onReorder={setBlocks} className="w-full">
+                {(currentPage.blocks || []).map((block, i) => (
+                  <BlockWrapper 
+                    key={block.id} 
+                    block={block} 
+                    index={i} 
+                    total={(currentPage.blocks || []).length} 
+                    editMode={true} 
+                  />
+                ))}
+              </Reorder.Group>
+            ) : (
+              (currentPage.blocks || []).map((block, i) => (
+                <BlockWrapper 
+                  key={block.id} 
+                  block={block} 
+                  index={i} 
+                  total={(currentPage.blocks || []).length} 
+                  editMode={false} 
+                />
+              ))
+            )}
             
             {/* Add Section Button */}
             {!previewMode && (
@@ -205,29 +259,63 @@ const BlankCanvas = () => {
               </div>
               
               <div className="flex-1 overflow-y-auto p-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-8">
                   {[
-                    { type: 'hero', label: 'Hero Header', desc: 'Main section with title and CTA', icon: <Monitor /> },
-                    { type: 'features', label: 'Feature Grid', desc: 'Showcase your core benefits', icon: <Smartphone /> },
-                    { type: 'testimonials', label: 'Testimonials', desc: 'Social proof from your users', icon: <X /> },
-                    { type: 'pricing', label: 'Pricing Table', desc: 'Clear tiered subscription plans', icon: <Code /> },
-                    { type: 'faq', label: 'FAQ Accordion', desc: 'Answer common questions', icon: <Plus /> },
-                    { type: 'logos', label: 'Logo Cloud', desc: 'Display partner/client logos', icon: <Layout /> },
-                    { type: 'contact', label: 'Contact Form', desc: 'Let users reach out to you', icon: <X /> },
-                    { type: 'navbar', label: 'Navigation', desc: 'Logo and menu links', icon: <Layout /> },
-                    { type: 'footer', label: 'Footer Section', desc: 'Site map and copyright info', icon: <Layout /> },
-                  ].map((item) => (
-                    <button 
-                      key={item.type}
-                      onClick={() => onSelectBlock(item.type)}
-                      className="group p-6 border border-[#c7cad5] rounded-3xl text-left hover:border-[#5b76fe] hover:bg-[#5b76fe]/5 transition-all hover:-translate-y-1"
-                    >
-                      <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-4 group-hover:bg-[#5b76fe] group-hover:text-white transition-colors">
-                        {React.cloneElement(item.icon, { size: 24 })}
+                    {
+                      category: "Core & Conversion",
+                      blocks: [
+                        { type: 'navbar', label: 'Navigation', desc: 'Logo and menu links', icon: <Menu /> },
+                        { type: 'hero', label: 'Hero Header', desc: 'Main section with title and CTA', icon: <Monitor /> },
+                        { type: 'newsletter', label: 'Newsletter', desc: 'Simple email capture section', icon: <Mail /> },
+                        { type: 'footer', label: 'Footer Section', desc: 'Site map and copyright info', icon: <ArrowDown /> },
+                      ]
+                    },
+                    {
+                      category: "Content & Proof",
+                      blocks: [
+                        { type: 'features', label: 'Feature Grid', desc: 'Showcase your core benefits', icon: <Layout /> },
+                        { type: 'stats', label: 'Impact Stats', desc: 'Social proof with big numbers', icon: <Hash /> },
+                        { type: 'editorial', label: 'Editorial Text', desc: 'Clean column for long-form text', icon: <FileText /> },
+                        { type: 'logos', label: 'Logo Cloud', desc: 'Display partner/client logos', icon: <Image /> },
+                        { type: 'blogList', label: 'Blog List', desc: 'Showcase your latest articles', icon: <BookOpen /> },
+                        { type: 'testimonials', label: 'Testimonials', desc: 'Social proof from your users', icon: <MessageSquare /> },
+                        { type: 'team', label: 'Team Grid', desc: 'Introduce your amazing team', icon: <Users /> },
+                        { type: 'gallery', label: 'Image Gallery', desc: 'Showcase your work or office', icon: <Image /> },
+                      ]
+                    },
+                    {
+                      category: "Creative & Cinematic",
+                      blocks: [
+                        { type: 'caseStudy', label: 'Case Study', desc: 'Cinematic scroll-driven project reveal', icon: <Briefcase /> },
+                      ]
+                    },
+                    {
+                      category: "Conversion & Support",
+                      blocks: [
+                        { type: 'pricing', label: 'Pricing Table', desc: 'Clear tiered subscription plans', icon: <Code /> },
+                        { type: 'faq', label: 'FAQ Accordion', desc: 'Answer common questions', icon: <HelpCircle /> },
+                        { type: 'contact', label: 'Contact Form', desc: 'Let users reach out to you', icon: <Users /> },
+                      ]
+                    }
+                  ].map(group => (
+                    <div key={group.category}>
+                      <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">{group.category}</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {group.blocks.map((item) => (
+                          <button 
+                            key={item.type}
+                            onClick={() => onSelectBlock(item.type)}
+                            className="group p-6 border border-[#c7cad5] rounded-3xl text-left hover:border-[#5b76fe] hover:bg-[#5b76fe]/5 transition-all hover:-translate-y-1"
+                          >
+                            <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-4 group-hover:bg-[#5b76fe] group-hover:text-white transition-colors">
+                              {React.cloneElement(item.icon, { size: 24 })}
+                            </div>
+                            <h4 className="font-bold text-slate-800 mb-1">{item.label}</h4>
+                            <p className="text-xs text-slate-500 leading-relaxed">{item.desc}</p>
+                          </button>
+                        ))}
                       </div>
-                      <h4 className="font-bold text-slate-800 mb-1">{item.label}</h4>
-                      <p className="text-xs text-slate-500 leading-relaxed">{item.desc}</p>
-                    </button>
+                    </div>
                   ))}
                 </div>
               </div>

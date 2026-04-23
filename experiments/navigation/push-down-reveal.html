@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Push-Down Navigation | UI Laboratory</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600&family=Inter:wght@300;400&display=swap"
+        rel="stylesheet">
+    <!-- GSAP Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        /* 
+           --- CONFIGURATION & THEME ---
+           Following the Muted Pastel Color Palette
+           Solid colors only as requested.
+        */
+        :root {
+            --soft-blush: #E8D5D0;
+            --muted-sage: #C8D8CC;
+            --pale-lavender: #D4C9E3;
+            --soft-peach: #F0D9D1;
+            --muted-blue: #B8D4E8;
+            --soft-cream: #F5F1E8;
+            --text-dark: #4A4A4A;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--soft-cream);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-dark);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- NAVIGATION BAR --- */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .logo {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 1.2rem;
+        }
+
+        .menu-toggle {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .menu-label-wrapper {
+            height: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .menu-label {
+            display: block;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            line-height: 20px;
+        }
+
+        .hamburger {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .line {
+            width: 18px;
+            height: 2px;
+            background-color: var(--text-dark);
+            border-radius: 2px;
+        }
+
+        /* --- MAIN CONTENT CONTAINER --- */
+        .main-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: var(--soft-cream);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 5vw;
+            will-change: transform;
+        }
+
+        .hero-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: clamp(3rem, 10vw, 8rem);
+            text-transform: uppercase;
+            letter-spacing: -3px;
+            line-height: 0.85;
+            text-align: center;
+        }
+
+        .hero-desc {
+            margin-top: 30px;
+            max-width: 400px;
+            text-align: center;
+            font-size: 1rem;
+            line-height: 1.6;
+            opacity: 0.6;
+        }
+
+        /* --- MENU OVERLAY --- */
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: var(--muted-sage);
+            z-index: 500;
+            /* Behind main content, but revealed by clip-path */
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            padding: 10vh 5vw;
+            /* Initially hidden via clip-path */
+            clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
+            will-change: clip-path;
+        }
+
+        .overlay-left {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .overlay-right {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .nav-links {
+            list-style: none;
+        }
+
+        .nav-item {
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+
+        .nav-link {
+            display: block;
+            font-family: 'Outfit', sans-serif;
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 600;
+            text-decoration: none;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: -1px;
+            transform: translateY(100%);
+        }
+
+        .overlay-image-container {
+            width: 100%;
+            max-width: 400px;
+            aspect-ratio: 4/5;
+            background-color: var(--soft-blush);
+            border-radius: 10px;
+            overflow: hidden;
+            opacity: 0;
+            transform: scale(0.9) translateY(20px);
+        }
+
+        .overlay-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* --- BACK REFERENCE --- */
+        .back-link {
+            position: fixed;
+            bottom: 40px;
+            left: 40px;
+            text-decoration: none;
+            color: var(--text-dark);
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--text-dark);
+            padding-bottom: 5px;
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+            z-index: 2100;
+        }
+
+        .back-link:hover {
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>
+        <div class="logo">LAB.02</div>
+        <div class="menu-toggle" id="menuToggle">
+            <div class="menu-label-wrapper">
+                <span class="menu-label" id="menuLabel">Menu</span>
+                <span class="menu-label" id="closeLabel">Close</span>
+            </div>
+            <div class="hamburger">
+                <span class="line" id="bar1"></span>
+                <span class="line" id="bar2"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content that will be pushed down -->
+    <div class="main-container" id="mainContainer">
+        <h1 class="hero-title">Push<br>Down</h1>
+        <p class="hero-desc">A cinematic reveal interaction where content physically moves to make room for navigation.
+        </p>
+    </div>
+
+    <!-- The Hidden Menu Overlay -->
+    <div class="menu-overlay" id="menuOverlay">
+        <div class="overlay-left">
+            <ul class="nav-links">
+                <li class="nav-item"><a href="#" class="nav-link">Strategy</a></li>
+                <li class="nav-item"><a href="#" class="nav-link">Design</a></li>
+                <li class="nav-item"><a href="#" class="nav-link">Identity</a></li>
+                <li class="nav-item"><a href="#" class="nav-link">Contact</a></li>
+            </ul>
+        </div>
+        <div class="overlay-right">
+            <div class="overlay-image-container" id="overlayMedia">
+                <!-- Using a placeholder for demonstration as per rules -->
+                <div
+                    style="width:100%; height:100%; background: var(--pale-lavender); display:flex; align-items:center; justify-content:center; color:white; font-family:'Outfit';">
+                    Media Case</div>
+            </div>
+        </div>
+    </div>
+
+    <a href="../../index.html" class="back-link">Back to Index</a>
+
+    <script>
+        // --- DOM ELEMENTS ---
+        const toggle = document.getElementById('menuToggle');
+        const mainContainer = document.getElementById('mainContainer');
+        const menuOverlay = document.getElementById('menuOverlay');
+        const menuLabel = document.getElementById('menuLabel');
+        const closeLabel = document.getElementById('closeLabel');
+        const bar1 = document.getElementById('bar1');
+        const bar2 = document.getElementById('bar2');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const overlayMedia = document.getElementById('overlayMedia');
+
+        let isOpen = false;
+        let isAnimating = false;
+
+        // --- GSAP TIMELINE ---
+        const pushTl = gsap.timeline({
+            paused: true,
+            onStart: () => { isAnimating = true; },
+            onComplete: () => { isAnimating = false; },
+            onReverseComplete: () => { isAnimating = false; }
+        });
+
+        // Initialize positions
+        gsap.set(closeLabel, { y: 20 });
+
+        pushTl
+            // 1. Label Slide
+            .to(menuLabel, { y: -20, duration: 0.4, ease: "power2.inOut" }, 0)
+            .to(closeLabel, { y: 0, duration: 0.4, ease: "power2.inOut" }, 0)
+
+            // 2. Icon Transformation
+            .to(bar1, { y: 3, rotate: 45, duration: 0.4, ease: "power2.inOut" }, 0)
+            .to(bar2, { y: -3, rotate: -45, duration: 0.4, ease: "power2.inOut" }, 0)
+
+            // 3. PUSH & REVEAL (Simultaneous)
+            // Push the main container down
+            .to(mainContainer, {
+                y: "100vh",
+                duration: 1.2,
+                ease: "power4.inOut"
+            }, 0.1)
+            // Expand the clip-path of the overlay
+            .to(menuOverlay, {
+                clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)",
+                duration: 1.2,
+                ease: "power4.inOut"
+            }, 0.1)
+
+            // 4. Content Stagged Slide up
+            .to(navLinks, {
+                y: 0,
+                duration: 0.8,
+                stagger: 0.1,
+                ease: "power3.out"
+            }, 0.8)
+
+            // 5. Media Fade In
+            .to(overlayMedia, {
+                autoAlpha: 1,
+                scale: 1,
+                y: 0,
+                duration: 0.8,
+                ease: "power2.out"
+            }, 1.0);
+
+        // --- BUTTON INTERACTION ---
+        toggle.addEventListener('click', () => {
+            if (isAnimating) return;
+
+            if (!isOpen) {
+                pushTl.play();
+                isOpen = true;
+            } else {
+                pushTl.reverse();
+                isOpen = false;
+            }
+        });
+
+        // Add helpful comments for beginners
+        /*
+           PUSH-DOWN EXPLAINED:
+           Instead of just putting a menu on top of the site, we literally 'push' 
+           the main site container down by 100% of the viewport height (100vh).
+           This gives the user a sense of architectural depth.
+
+           CLIP-PATH ANIMATION:
+           We use 'clip-path: polygon(...)' to define a rectangle. 
+           In the hidden state, all its points are at the top (0% Y).
+           In the open state, we move the bottom points to the floor (100% Y).
+
+           IS-ANIMATING FLAG:
+           By checking 'isAnimating', we prevent the user from clicking the 
+           button again while the animation is still running, which prevents 
+           glitchy behavior.
+        */
+
+    </script>
+</body>
+
+</html>

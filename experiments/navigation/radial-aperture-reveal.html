@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radial Aperture Reveal | UI Laboratory</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600&family=Inter:wght@300;400&display=swap"
+        rel="stylesheet">
+    <!-- GSAP Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
+    <link rel="stylesheet" href="../../assets/global-nav.css">
+    <script src="../../assets/global-nav.js"></script>
+
+    <style>
+        /* 
+           --- CONFIGURATION & THEME ---
+           Following the Muted Pastel Color Palette
+        */
+        :root {
+            --soft-blush: #E8D5D0;
+            --muted-sage: #C8D8CC;
+            --pale-lavender: #D4C9E3;
+            --soft-peach: #F0D9D1;
+            --muted-blue: #B8D4E8;
+            --soft-cream: #F5F1E8;
+            --text-dark: #4A4A4A;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--soft-cream);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-dark);
+            height: 100vh;
+            overflow: hidden;
+            /* Normal solid background, no gradients or images as requested */
+        }
+
+        /* --- HERO CONTENT --- */
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .hero h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: clamp(2rem, 8vw, 5rem);
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            color: var(--text-dark);
+            line-height: 0.9;
+        }
+
+        .hero p {
+            margin-top: 20px;
+            font-size: 1rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            opacity: 0.6;
+        }
+
+        /* --- TOGGLE BUTTON --- */
+        .menu-toggle {
+            position: fixed;
+            top: 40px;
+            right: 40px;
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            z-index: 2000;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .line {
+            width: 20px;
+            height: 2px;
+            background-color: var(--text-dark);
+            border-radius: 2px;
+        }
+
+        /* --- RADIAL MENU OVERLAY --- */
+        .nav-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            z-index: 1000;
+            pointer-events: none; /* Initially allow clicks through to hero */
+            overflow: hidden;
+        }
+
+        .nav-overlay.is-active {
+            pointer-events: auto;
+        }
+
+        /* Panels */
+        .panel {
+            position: relative;
+            width: 50vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .inner-panel {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .menu-background-left-inner {
+            left: 0;
+            background-color: var(--pale-lavender);
+            transform-origin: top left;
+            transform: rotate(-90deg);
+        }
+
+        .menu-background-right-inner {
+            right: 0;
+            background-color: var(--soft-blush);
+            transform-origin: top right;
+            transform: rotate(90deg);
+        }
+
+        /* --- MENU CONTENT --- */
+        .menu-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1500;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            text-align: center;
+        }
+
+        .nav-item {
+            overflow: hidden; /* For staggered slide-up effect */
+        }
+
+        .nav-link {
+            display: block;
+            font-family: 'Outfit', sans-serif;
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 600;
+            text-decoration: none;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: -1px;
+            line-height: 1;
+            /* Using spans for text reveal */
+            transform: translateY(110%);
+        }
+
+        .menu-footer {
+            position: absolute;
+            bottom: 40px;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        /* --- BACK REFERENCE --- */
+        .back-link {
+            position: fixed;
+            bottom: 40px;
+            left: 40px;
+            text-decoration: none;
+            color: var(--text-dark);
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--text-dark);
+            padding-bottom: 5px;
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+            z-index: 500;
+        }
+
+        .back-link:hover {
+            opacity: 1;
+        }
+
+
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="menu-toggle" id="menuToggle">
+            <span class="line bar-one" id="barOne"></span>
+            <span class="line bar-two" id="barTwo"></span>
+        </div>
+    </header>
+
+    <main class="hero">
+        <p>Aperture Reveal</p>
+        <h1>Cinematic<br>Navigation</h1>
+    </main>
+
+    <!-- The Radial Aperture Overlay -->
+    <div class="nav-overlay" id="navOverlay">
+        <div class="panel">
+            <div class="inner-panel menu-background-left-inner" id="leftPanel"></div>
+        </div>
+        <div class="panel">
+            <div class="inner-panel menu-background-right-inner" id="rightPanel"></div>
+        </div>
+
+        <!-- Menu Content inside the overlay -->
+        <div class="menu-content" id="menuContent">
+            <ul class="nav-links">
+                <li class="nav-item"><a href="#" class="nav-link">Home</a></li>
+                <li class="nav-item"><a href="#" class="nav-link">Studio</a></li>
+                <li class="nav-item"><a href="#" class="nav-link">Archive</a></li>
+                <li class="nav-item"><a href="#" class="nav-link">Talks</a></li>
+                <li class="nav-item"><a href="#" class="nav-link">Connect</a></li>
+            </ul>
+
+            <div class="menu-footer" id="menuFooter">
+                <span>© 2026 UI Laboratory</span>
+                <span>London / Tokyo</span>
+                <span>Instagram / Twitter</span>
+            </div>
+        </div>
+    </div>
+
+    <a href="../../index.html" class="back-link">Back to Index</a>
+
+
+
+    <script>
+        gsap.registerPlugin(Draggable);
+        initGlobalNav('../../');
+
+        // --- DOM ELEMENTS ---
+        const toggle = document.getElementById('menuToggle');
+        const overlay = document.getElementById('navOverlay');
+        const leftPanel = document.getElementById('leftPanel');
+        const rightPanel = document.getElementById('rightPanel');
+        const menuContent = document.getElementById('menuContent');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const menuFooter = document.getElementById('menuFooter');
+        const barOne = document.getElementById('barOne');
+        const barTwo = document.getElementById('barTwo');
+
+        let isOpen = false;
+
+        // --- GSAP TIMELINE ---
+        const revealTl = gsap.timeline({ paused: true });
+
+        revealTl
+            // 1. Icon Transformation (Hamburger to X)
+            // bar-one shifts down, rotates, and scales
+            .to(barOne, {
+                y: 4,
+                rotate: 45,
+                scaleX: 1.2,
+                duration: 0.5,
+                ease: "power2.inOut"
+            }, 0)
+            // bar-two shifts up, rotates, and scales
+            .to(barTwo, {
+                y: -4,
+                rotate: -45,
+                scaleX: 1.2,
+                duration: 0.5,
+                ease: "power2.inOut"
+            }, 0)
+            // 2. Panel Rotation (Aperture Effect - Clock Hands Motion)
+            .to([leftPanel, rightPanel], {
+                rotation: 0,
+                duration: 1.2,
+                ease: "power4.inOut"
+            }, 0.1)
+            // 3. Reveal Menu Content
+            .set(menuContent, { autoAlpha: 1, visibility: 'visible' }, 0.6)
+            .to(navLinks, {
+                y: 0,
+                duration: 0.8,
+                stagger: 0.1,
+                ease: "power3.out"
+            }, 0.8)
+            .to(menuFooter, {
+                autoAlpha: 1,
+                y: 0,
+                duration: 0.6,
+                ease: "power2.out"
+            }, 1.1);
+
+        // --- BUTTON INTERACTION ---
+        toggle.addEventListener('click', () => {
+            if (!isOpen) {
+                revealTl.play();
+                overlay.classList.add('is-active');
+            } else {
+                revealTl.reverse();
+                overlay.classList.remove('is-active');
+            }
+            isOpen = !isOpen;
+        });
+
+        // --- REVEAL ON LINKS HOVER ---
+        navLinks.forEach(link => {
+            link.addEventListener('mouseenter', () => {
+                gsap.to(link, { x: 20, duration: 0.3, ease: "power2.out" });
+            });
+            link.addEventListener('mouseleave', () => {
+                gsap.to(link, { x: 0, duration: 0.3, ease: "power2.out" });
+            });
+        });
+
+        // Add helpful comments for beginners
+        /* 
+           TRANSFORM ORIGIN EXPLAINED:
+           By setting the 'transform-origin' to 'top left' and 'top right' on the panels, 
+           the rotation happens around the corners of the viewport. This creates the 
+           "swinging door" or "radial aperture" feel.
+
+           POINTER-EVENTS EXPLAINED:
+           The overlay starts with 'pointer-events: none' so you can click the hero 
+           buttons beneath it. When active, we switch it to 'auto' so the menu links 
+           become clickable.
+
+           HIDDEN OVERFLOW:
+           We wrap the nav links in an element with 'overflow: hidden' and animate 
+           the links from Y: 100% to Y: 0. This makes them appear to slide UP from 
+           the surface.
+        */
+
+
+    </script>
+</body>
+
+</html>

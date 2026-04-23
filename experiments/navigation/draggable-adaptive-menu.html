@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Draggable Adaptive Menu | UI Laboratory</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600&family=Inter:wght@300;400&display=swap"
+        rel="stylesheet">
+    <!-- GSAP Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
+    <link rel="stylesheet" href="../../assets/global-nav.css">
+    <script src="../../assets/global-nav.js"></script>
+
+    <style>
+        /* 
+           --- CONFIGURATION & THEME ---
+           Following the Muted Pastel Color Palette
+        */
+        :root {
+            --soft-blush: #E8D5D0;
+            --muted-sage: #C8D8CC;
+            --pale-lavender: #D4C9E3;
+            --soft-peach: #F0D9D1;
+            --muted-blue: #B8D4E8;
+            --soft-cream: #F5F1E8;
+            --text-dark: #4A4A4A;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--soft-cream);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-dark);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* Premium Background Image */
+            background-image: url('../../assets/bg-pastel.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* --- HEADER INFO --- */
+        .info {
+            position: fixed;
+            top: 40px;
+            left: 40px;
+            pointer-events: none;
+        }
+
+        .info h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            color: var(--text-dark);
+            opacity: 0.8;
+        }
+
+        .info p {
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            color: var(--text-dark);
+            opacity: 0.6;
+        }
+
+
+
+
+    </style>
+</head>
+
+<body>
+
+    <div class="info">
+        <h1>Draggable Menu</h1>
+        <p>Adaptive UI • Physics-Based • Staggered Reveal</p>
+    </div>
+
+    <div style="text-align: center; color: var(--text-dark); opacity: 0.4; font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;">
+        Using Global Standardized Components
+    </div>    <script>
+        gsap.registerPlugin(Draggable);
+        initGlobalNav('../../');
+    </script>
+</body>
+
+</html>

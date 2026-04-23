@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High-Impact Physics Service Reveal</title>
+    <link rel="stylesheet" href="../../assets/global-nav.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
+    <script src="../../assets/global-nav.js"></script>
+    <script src="https://unpkg.com/matter-js@0.19.0/build/matter.min.js"></script>
+    <style>
+        :root {
+            --bg: #050505;
+            --accent: #151515;
+            --text: #ffffff;
+            --blue: #00d2ff;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            padding: 100px 0;
+            overflow-x: hidden;
+        }
+
+        .services-container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 40px;
+            box-sizing: border-box;
+        }
+
+        .service-row {
+            position: relative;
+            width: 100%;
+            border-bottom: 1px solid var(--accent);
+            cursor: pointer;
+        }
+
+        .service-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 60px 0;
+            font-size: clamp(2rem, 7vw, 4.5rem);
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            z-index: 10;
+            position: relative;
+            background: var(--bg);
+            user-select: none;
+        }
+
+        .text-wrapper {
+            display: flex;
+            gap: 0;
+        }
+
+        .service-number {
+            font-size: 1.2rem;
+            font-family: 'Space Mono', monospace;
+            opacity: 0.3;
+            font-weight: 400;
+        }
+
+        .char {
+            display: inline-block;
+            will-change: transform;
+        }
+
+        .reveal-content {
+            height: 0;
+            position: relative;
+            overflow: hidden;
+            background: #080808;
+            will-change: height;
+            perspective: 1500px;
+        }
+
+        .image-stack {
+            position: absolute;
+            bottom: -100%;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 40px;
+            z-index: 2;
+            pointer-events: none;
+            transform-style: preserve-3d;
+            will-change: transform;
+        }
+
+        .image-wrapper {
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 50px 100px rgba(0,0,0,0.8);
+            background: #111;
+            transform-style: preserve-3d;
+        }
+
+        .reveal-image {
+            width: 280px;
+            height: 380px;
+            object-fit: cover;
+            display: block;
+            opacity: 0.8;
+            user-select: none;
+            pointer-events: none;
+            -webkit-user-drag: none;
+        }
+
+        .physics-tags-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .tag {
+            position: absolute;
+            padding: 15px 35px;
+            background: #ffffff;
+            color: #000;
+            border-radius: 100px;
+            font-size: 1.1rem;
+            font-weight: 900;
+            white-space: nowrap;
+            pointer-events: auto;
+            user-select: none;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            opacity: 0;
+            will-change: transform;
+        }
+
+        .tag.blue { background: var(--blue); color: #000; }
+    </style>
+</head>
+<body>
+
+    <div class="services-container">
+        <div class="service-row" data-tags="BRANDING,STRATEGY,MOTION,IDENTITY,WEB3">
+            <div class="service-header">
+                <div class="text-wrapper">Visual Identity</div>
+                <span class="service-number">01</span>
+            </div>
+            <div class="reveal-content">
+                <div class="image-stack">
+                    <div class="image-wrapper"><img src="https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&q=80&w=800" class="reveal-image"></div>
+                    <div class="image-wrapper"><img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800" class="reveal-image"></div>
+                    <div class="image-wrapper"><img src="https://images.unsplash.com/photo-1633167606207-d840b5070fc2?auto=format&fit=crop&q=80&w=800" class="reveal-image"></div>
+                </div>
+                <div class="physics-tags-container"></div>
+            </div>
+        </div>
+
+        <div class="service-row" data-tags="PRODUCT,UI/UX,MOBILE,REACT,SCALE">
+            <div class="service-header">
+                <div class="text-wrapper">Product Design</div>
+                <span class="service-number">02</span>
+            </div>
+            <div class="reveal-content">
+                <div class="image-stack">
+                    <div class="image-wrapper"><img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=800" class="reveal-image"></div>
+                    <div class="image-wrapper"><img src="https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&q=80&w=800" class="reveal-image"></div>
+                    <div class="image-wrapper"><img src="https://images.unsplash.com/photo-1550439062-609e1531270e?auto=format&fit=crop&q=80&w=800" class="reveal-image"></div>
+                </div>
+                <div class="physics-tags-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        gsap.registerPlugin(Draggable);
+        initGlobalNav('../../');
+
+        const { Engine, World, Bodies, Runner, Mouse, MouseConstraint, Body } = Matter;
+
+        class ServiceReveal {
+            constructor(el) {
+                this.el = el;
+                this.header = el.querySelector('.service-header');
+                this.textWrapper = el.querySelector('.text-wrapper');
+                this.content = el.querySelector('.reveal-content');
+                this.stack = el.querySelector('.image-stack');
+                this.container = el.querySelector('.physics-tags-container');
+                this.tagNames = el.dataset.tags.split(',');
+                
+                this.engine = null;
+                this.tagBodies = [];
+                this.tagElements = [];
+                this.isOpen = false;
+                this.runner = null;
+
+                this.initTypography();
+                this.init();
+            }
+
+            initTypography() {
+                const text = this.textWrapper.textContent;
+                this.textWrapper.innerHTML = '';
+                [...text].forEach(char => {
+                    const span = document.createElement('span');
+                    span.className = 'char';
+                    span.textContent = char === ' ' ? '\u00A0' : char;
+                    this.textWrapper.appendChild(span);
+                });
+                this.chars = this.textWrapper.querySelectorAll('.char');
+            }
+
+            init() {
+                this.el.addEventListener('mouseenter', () => this.open());
+                this.el.addEventListener('mouseleave', () => this.close());
+                this.el.addEventListener('mousemove', (e) => this.handleParallax(e));
+            }
+
+            open() {
+                this.isOpen = true;
+                
+                // 1. Text Wave Effect
+                gsap.to(this.chars, {
+                    y: -15,
+                    color: '#00d2ff',
+                    stagger: { each: 0.02, from: "start" },
+                    duration: 0.4,
+                    ease: "power2.out"
+                });
+
+                gsap.to(this.content, { height: 550, duration: 0.8, ease: "elastic.out(1, 0.8)" });
+                gsap.to(this.stack, { bottom: "12%", duration: 1.2, ease: "power4.out", delay: 0.1 });
+                
+                this.initPhysics();
+            }
+
+            close() {
+                this.isOpen = false;
+                
+                // Reset Text
+                gsap.to(this.chars, {
+                    y: 0,
+                    color: '#fff',
+                    stagger: 0.01,
+                    duration: 0.3
+                });
+
+                gsap.to(this.content, { height: 0, duration: 0.5, ease: "power3.inOut" });
+                gsap.to(this.stack, { bottom: "-100%", rotateX: 0, rotateY: 0, x: 0, xPercent: -50, duration: 0.5 });
+                
+                if (this.engine) {
+                    Runner.stop(this.runner);
+                    World.clear(this.engine.world);
+                    Engine.clear(this.engine);
+                    this.engine = null;
+                    this.tagElements.forEach(t => t.remove());
+                    this.tagElements = [];
+                    this.tagBodies = [];
+                }
+            }
+
+            handleParallax(e) {
+                if (!this.isOpen) return;
+                const rect = this.el.getBoundingClientRect();
+                const x = (e.clientX - rect.left) / rect.width - 0.5;
+                const y = (e.clientY - rect.top) / rect.height - 0.5;
+
+                gsap.to(this.stack, {
+                    rotateY: x * 45,
+                    rotateX: -y * 45,
+                    xPercent: -50,
+                    x: x * 100,
+                    y: y * 50,
+                    duration: 0.8,
+                    ease: "power2.out"
+                });
+            }
+
+            initPhysics() {
+                const w = this.content.offsetWidth;
+                const h = 550;
+
+                this.engine = Engine.create();
+                this.engine.world.gravity.y = 1.5; // Faster gravity
+
+                const ground = Bodies.rectangle(w/2, h + 50, w * 4, 100, { isStatic: true });
+                const left = Bodies.rectangle(-50, h/2, 100, h * 4, { isStatic: true });
+                const right = Bodies.rectangle(w + 50, h/2, 100, h * 4, { isStatic: true });
+                World.add(this.engine.world, [ground, left, right]);
+
+                const mouse = Mouse.create(this.content);
+                mouse.element.removeEventListener("mousewheel", mouse.mousewheel);
+                mouse.element.removeEventListener("DOMMouseScroll", mouse.mousewheel);
+
+                const mc = MouseConstraint.create(this.engine, {
+                    mouse: mouse,
+                    constraint: { stiffness: 0.3, render: { visible: false } }
+                });
+                World.add(this.engine.world, mc);
+
+                this.tagNames.forEach((name, i) => {
+                    const el = document.createElement('div');
+                    el.className = `tag ${i % 2 === 0 ? 'blue' : ''}`;
+                    el.textContent = name;
+                    this.container.appendChild(el);
+                    this.tagElements.push(el);
+
+                    const spawnX = (w * 0.1) + (Math.random() * w * 0.8);
+                    const spawnY = -150 - (i * 150);
+                    
+                    const body = Bodies.rectangle(spawnX, spawnY, name.length * 14 + 60, 60, {
+                        chamfer: { radius: 30 },
+                        restitution: 0.8, // Bouncier
+                        frictionAir: 0.01, // Less air drag = faster fall
+                        friction: 0.1,
+                        angle: (Math.random() - 0.5) * 2
+                    });
+
+                    // Initial kick
+                    Body.setVelocity(body, { x: (Math.random()-0.5)*10, y: 5 });
+                    Body.setAngularVelocity(body, (Math.random()-0.5)*0.2);
+
+                    this.tagBodies.push(body);
+                    World.add(this.engine.world, body);
+                });
+
+                this.runner = Runner.create();
+                Runner.run(this.runner, this.engine);
+
+                const update = () => {
+                    if (!this.isOpen || !this.engine) return;
+                    this.tagBodies.forEach((body, i) => {
+                        const el = this.tagElements[i];
+                        if (el) {
+                            el.style.transform = `translate(${body.position.x - el.offsetWidth/2}px, ${body.position.y - el.offsetHeight/2}px) rotate(${body.angle}rad)`;
+                            el.style.opacity = 1;
+                        }
+                    });
+                    requestAnimationFrame(update);
+                };
+                update();
+            }
+        }
+
+        document.querySelectorAll('.service-row').forEach(row => new ServiceReveal(row));
+    </script>
+</body>
+</html>

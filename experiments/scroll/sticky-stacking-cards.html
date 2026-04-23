@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sticky Stacking Cards | UI Laboratory</title>
+    <meta name="description"
+        content="A sophisticated GSAP Sticky Stacking Card Scroll Animation with precise pinning and inner content motion.">
+
+    <!-- Modern Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;900&family=Inter:wght@300;400;600&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="../../assets/global-nav.css">
+
+    <style>
+        /* 
+           CONFIGURATION & DESIGN TOKENS
+           Palette: Extended Pastel Palette
+        */
+        :root {
+            /* Muted / Earthy Colors */
+            --bg-base: #F5F5F0;
+            /* Soft White */
+            --text-main: #2D2D2D;
+            --text-muted: #888888;
+
+            /* Card Colors (Soft / Faded Pastels & Original) */
+            --card-1: #E8D5D0;
+            /* Soft Blush */
+            --card-2: #C8D8CC;
+            /* Muted Sage */
+            --card-3: #D4C9E3;
+            /* Pale Lavender */
+            --card-4: #B8D4E8;
+            /* Muted Blue */
+
+            --font-display: 'Outfit', sans-serif;
+            --font-main: 'Inter', sans-serif;
+
+            --section-height: 100vh;
+            --card-width: 90vw;
+            --card-height: 70vh;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Hero & Sections */
+        section {
+            width: 100%;
+            height: var(--section-height);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 5vw;
+        }
+
+        .hero h1 {
+            font-family: var(--font-display);
+            font-size: clamp(3rem, 12vw, 10rem);
+            font-weight: 900;
+            line-height: 0.9;
+            text-transform: uppercase;
+            letter-spacing: -0.04em;
+            text-align: center;
+        }
+
+        .hero p {
+            margin-top: 2rem;
+            font-size: 1.2rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            opacity: 0.6;
+        }
+
+        .intro {
+            background-color: #EEE8F5;
+            /* Lavender Cloud */
+            text-align: center;
+            max-width: 100%;
+        }
+
+        .intro h2 {
+            font-family: var(--font-display);
+            font-size: clamp(2rem, 5vw, 4rem);
+            max-width: 800px;
+        }
+
+        /* Cards Container */
+        .cards-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            padding-top: 2vh;
+            padding-bottom: 20vh;
+        }
+
+        .card {
+            width: var(--card-width);
+            height: var(--card-height);
+            position: relative;
+            margin-bottom: 5vh;
+            /* Reduced gap between cards */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px;
+            /* Precise dimensions for pinning */
+            will-change: transform;
+        }
+
+        .card-inner {
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            border-radius: 40px;
+            /* Slightly more rounded for premium feel */
+            overflow: hidden;
+            display: flex;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.08);
+            /* Stronger shadow */
+            will-change: transform;
+        }
+
+        .card-content {
+            flex: 1;
+            padding: 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        .card-visual {
+            flex: 1.2;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        .card h3 {
+            font-family: var(--font-display);
+            font-size: clamp(2rem, 4vw, 3.5rem);
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+
+        .card p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: var(--text-muted);
+            max-width: 400px;
+        }
+
+        .card-item-tag {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            margin-bottom: 1rem;
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        /* Card Colors */
+        #card-1 .card-inner {
+            background-color: var(--card-1);
+        }
+
+        #card-2 .card-inner {
+            background-color: var(--card-2);
+        }
+
+        #card-3 .card-inner {
+            background-color: var(--card-3);
+        }
+
+        #card-4 .card-inner {
+            background-color: var(--card-4);
+        }
+
+        /* Outro */
+        .outro {
+            background-color: var(--bg-base);
+        }
+
+        .outro h2 {
+            font-family: var(--font-display);
+            font-size: clamp(3rem, 8vw, 6rem);
+            text-transform: uppercase;
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .card-inner {
+                flex-direction: column;
+            }
+
+            .card-content {
+                padding: 2rem;
+                order: 2;
+            }
+
+            .card-visual {
+                height: 300px;
+                flex: none;
+                order: 1;
+            }
+
+            .card {
+                height: auto;
+                min-height: 80vh;
+            }
+        }
+
+        /* Custom Scroll Smoothness Wrapper */
+        html.lenis {
+            height: auto;
+        }
+
+        .lenis-smooth {
+            scroll-behavior: auto;
+        }
+    </style>
+</head>
+
+<body>
+
+    <main id="main-content">
+        <!-- Hero Section -->
+        <section class="hero">
+            <p>UI Experiment 012</p>
+            <h1>Sticky<br>Stack</h1>
+        </section>
+
+        <!-- Intro Section -->
+        <section class="intro">
+            <h2>Experience depth through synchronized pinning and motion.</h2>
+        </section>
+
+        <!-- Cards Section -->
+        <div class="cards-container" id="cardsWrapper">
+            <!-- Card 1 -->
+            <div class="card" id="card-1">
+                <div class="card-inner">
+                    <div class="card-content">
+                        <span class="card-item-tag">Precision</span>
+                        <h3>GSAP Pinning</h3>
+                        <p>Locking elements in place while allowing internal components to breathe and move.</p>
+                    </div>
+                    <div class="card-visual"
+                        style="background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=1000');">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="card" id="card-2">
+                <div class="card-inner">
+                    <div class="card-content">
+                        <span class="card-item-tag">Depth</span>
+                        <h3>Stacking Effect</h3>
+                        <p>Cards slide over one another seamlessly by disabling pin spacing and using relative offsets.
+                        </p>
+                    </div>
+                    <div class="card-visual"
+                        style="background-image: url('https://images.unsplash.com/photo-1633167606207-d840b5070fc2?auto=format&fit=crop&q=80&w=1000');">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="card" id="card-3">
+                <div class="card-inner">
+                    <div class="card-content">
+                        <span class="card-item-tag">Performance</span>
+                        <h3>GPU Acceleration</h3>
+                        <p>Leveraging transforms and will-change to ensure buttery smooth 60fps scrolling transitions.
+                        </p>
+                    </div>
+                    <div class="card-visual"
+                        style="background-image: url('https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&q=80&w=1000');">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 4 -->
+            <div class="card" id="card-4">
+                <div class="card-inner">
+                    <div class="card-content">
+                        <span class="card-item-tag">Control</span>
+                        <h3>Scrub Logic</h3>
+                        <p>Direct linking between scroll progress and animation playback for tactile interaction.</p>
+                    </div>
+                    <div class="card-visual"
+                        style="background-image: url('https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?auto=format&fit=crop&q=80&w=1000');">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Outro Section -->
+        <section class="outro">
+            <h2>The End</h2>
+            <p>Explore more experiments in the UI Laboratory.</p>
+        </section>
+    </main>
+
+    <!-- Libs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.27/bundled/lenis.min.js"></script>
+
+    <script src="../../assets/global-nav.js"></script>
+
+    <script>
+        // --- INITIALIZATION ---
+
+        // Register GSAP Plugins
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Initialize Global Nav
+        initGlobalNav('../../');
+
+        // Initialize Lenis Smooth Scroll
+        const lenis = new Lenis({
+            duration: 1.2,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            wheelMultiplier: 1,
+            infinite: false,
+        });
+
+        // Sync Lenis with ScrollTrigger
+        lenis.on('scroll', ScrollTrigger.update);
+        gsap.ticker.add((time) => {
+            lenis.raf(time * 1000);
+        });
+        gsap.ticker.lagSmoothing(0);
+
+        // --- ANIMATION LOGIC ---
+
+        const cards = gsap.utils.toArray(".card");
+
+        // This is the implementation strategy requested by the user
+        cards.forEach((card, index) => {
+            const inner = card.querySelector('.card-inner');
+
+            ScrollTrigger.create({
+                trigger: card,
+                start: "top 35%",
+                // Dynamic height: pin for half the window height
+                end: () => `+=${window.innerHeight * 0.5}`,
+                pin: true,
+                pinSpacing: false, // CRITICAL: Allows cards to overlap
+                scrub: true,
+                animation: gsap.to(inner, {
+                    // Stacking effect: slightly shift the inner content
+                    // as it pins to give a sense of depth/parallax
+                    y: -100 * index,
+                    ease: "none"
+                }),
+                onUpdate: (self) => {
+                    // Optional: Visual feedback based on progress
+                }
+            });
+        });
+
+        // Hero Parallax
+        gsap.to(".hero h1", {
+            scrollTrigger: {
+                trigger: ".hero",
+                start: "top top",
+                end: "bottom top",
+                scrub: true
+            },
+            y: 200,
+            opacity: 0,
+            ease: "none"
+        });
+
+        // Intro Reveal
+        gsap.from(".intro h2", {
+            scrollTrigger: {
+                trigger: ".intro",
+                start: "top bottom",
+                end: "center center",
+                scrub: true
+            },
+            y: 100,
+            opacity: 0,
+            scale: 0.9,
+            ease: "power2.out"
+        });
+
+        // Outro Reveal
+        gsap.from(".outro h2", {
+            scrollTrigger: {
+                trigger: ".outro",
+                start: "top bottom",
+                end: "center center",
+                scrub: true
+            },
+            y: 50,
+            opacity: 0,
+            ease: "power2.out"
+        });
+
+        // Console Log for Beginners
+        console.log("%c UI LAB: Sticky Stacking Cards Implementation ACTIVE ", "background: #D4C9E3; color: #2D2D2D; font-weight: bold; padding: 4px;");
+        console.log("Technique: Pinning the parent .card while animating the .card-inner Y-axis to prevent layout jumps.");
+    </script>
+</body>
+
+</html>

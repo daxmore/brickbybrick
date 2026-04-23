@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG Brushstroke | Professional Agency Reveal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../assets/global-nav.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
+    <script src="../../assets/global-nav.js"></script>
+    <style>
+        :root {
+            --bg: #f5f5f7;
+            --blue: #1b63f3;
+            --blue-light: #5ba1ff;
+            --red: #e61d2b;
+            --red-light: #ff6b77;
+            --text-dark: #121212;
+            --text-light: #ffffff;
+            --font-main: 'Inter', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-dark);
+            font-family: var(--font-main);
+            overflow-x: hidden;
+            padding-top: 80px;
+        }
+
+
+
+        /* Bento Grid */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            grid-auto-rows: 250px;
+            gap: 1.5rem;
+            padding: 2rem 5vw;
+        }
+
+        /* Card System */
+        .card {
+            position: relative;
+            background-color: white;
+            border-radius: 20px;
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+        }
+
+        .card-lg { grid-column: span 6; grid-row: span 2; }
+        .card-md { grid-column: span 6; grid-row: span 2; }
+        .card-sm { grid-column: span 6; grid-row: span 1; }
+
+        /* Layers */
+        .layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .layer-initial { z-index: 2; color: white; transition: opacity 0.3s; }
+        
+        .layer-reveal { 
+            z-index: 10; /* Important: Put text layer above everything else */
+            padding: 3.5rem; 
+            align-items: flex-start; 
+            background: transparent; /* Changed to transparent so the SVG reveal becomes the background */
+            text-align: left;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        /* SVG Paint Reveal Overlay */
+        .reveal-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .brush-stroke {
+            fill: none;
+            stroke-width: 0;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            will-change: stroke-dashoffset, stroke-width;
+        }
+
+        /* Content Styling */
+        .logo-box {
+            width: 90px;
+            height: 90px;
+            background: white;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 2.8rem;
+            color: var(--blue);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            transition: transform 0.5s cubic-bezier(0.7,0,0.3,1), opacity 0.4s;
+        }
+
+        .reveal-info h1 { font-family: 'Inter', sans-serif; font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 500; margin-bottom: 0.5rem; letter-spacing: -2px; }
+        .reveal-info p { font-size: clamp(1rem, 1.5vw, 1.1rem); line-height: 1.5; color: #444; max-width: 500px; font-weight: 500; }
+        .badge { display: inline-block; padding: 0.6rem 1.2rem; border-radius: 100px; background: #f4f4f6; font-size: 0.85rem; font-weight: 600; color: #999; margin-bottom: 1.5rem; text-transform: uppercase; }
+
+        .bg-blue { background-color: var(--blue); }
+        .bg-red { background-color: var(--red); }
+
+        @media (max-width: 768px) {
+            .grid-container { grid-template-columns: 1fr; grid-auto-rows: auto; }
+            .card-lg, .card-md, .card-sm { grid-column: span 1; height: 450px; }
+        }
+    </style>
+</head>
+<body>
+
+
+
+    <div class="grid-container">
+        <!-- Card 1 -->
+        <div class="card card-lg" data-color="blue">
+            <div class="layer layer-initial bg-blue">
+                <div class="logo-box">W</div>
+            </div>
+            
+            <div class="layer layer-reveal">
+                <div class="reveal-info">
+                    <h1>5K / mo</h1>
+                    <p>Built Webflow's Startup + Classroom pages, generating 5k+ new signups every month (2025).</p>
+                </div>
+            </div>
+
+            <svg class="reveal-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+                <path class="brush-stroke" stroke="#5ba1ff" d="M -100,500 C 300,800 700,200 1100,700" />
+                <path class="brush-stroke" stroke="#1b63f3" d="M -100,200 C 200,50 800,450 1100,300" />
+                <path class="brush-stroke solid-fill" stroke="#fff" d="M -100,500 L 1100,500" />
+            </svg>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="card card-md">
+            <div class="layer layer-initial bg-red">
+                <div class="logo-box" style="color: var(--red);">R.</div>
+            </div>
+            
+            <div class="layer layer-reveal">
+                <div class="reveal-info">
+                    <h1>3x</h1>
+                    <p>Partnered with Expa to turn complex product ideas into a fast, interactive site — launched 3x faster for iSelfie (2025).</p>
+                </div>
+            </div>
+
+            <svg class="reveal-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+                <path class="brush-stroke" stroke="#ff6b77" d="M 500,-100 C 300,500 700,500 500,1100" />
+                <path class="brush-stroke solid-fill" stroke="#fff" d="M 500,-100 L 500,1100" />
+            </svg>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="card card-sm">
+            <div class="layer layer-initial" style="background: #e5e5e7;">
+                <div class="logo-box" style="color: #333; background: transparent; box-shadow: none;">iS.</div>
+            </div>
+            
+            <div class="layer layer-reveal">
+                <div class="reveal-info">
+                    <div class="badge">Partnership</div>
+                    <h1>80%</h1>
+                    <p>Optimized workflows, boosting team efficiency and cutting dev bottlenecks by 80% (2022-2025).</p>
+                </div>
+            </div>
+
+            <svg class="reveal-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+                <path class="brush-stroke" stroke="#ddd" d="M -100,200 C 300,100 700,300 1100,200" />
+                <path class="brush-stroke solid-fill" stroke="#fff" d="M -100,500 L 1100,500" />
+            </svg>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="card card-sm">
+            <div class="layer layer-initial bg-red">
+                <div class="logo-box" style="color: var(--red);">+</div>
+            </div>
+            
+            <div class="layer layer-reveal">
+                <div class="reveal-info">
+                    <div class="badge">Growth</div>
+                    <h1>Scaling</h1>
+                    <p>Accelerating digital expansion for emerging scaling startups.</p>
+                </div>
+            </div>
+
+            <svg class="reveal-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+                <path class="brush-stroke" stroke="#ff6b77" d="M -100,100 C 200,400 800,200 1100,100" />
+                <path class="brush-stroke solid-fill" stroke="#fff" d="M -100,500 L 1100,500" />
+            </svg>
+        </div>
+    </div>
+
+    <!-- GSAP Lib moved to head -->
+    <script>
+        gsap.registerPlugin(Draggable);
+        initGlobalNav('../../');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.card');
+
+            cards.forEach(card => {
+                const strokes = card.querySelectorAll('.brush-stroke');
+                const solidFill = card.querySelector('.solid-fill');
+                const otherStrokes = Array.from(strokes).filter(s => s !== solidFill);
+                
+                const front = card.querySelector('.layer-initial');
+                const revealLayer = card.querySelector('.layer-reveal');
+                const logo = card.querySelector('.logo-box');
+
+                strokes.forEach(path => {
+                    const length = path.getTotalLength();
+                    gsap.set(path, {
+                        strokeDasharray: length,
+                        strokeDashoffset: length,
+                        strokeWidth: 0
+                    });
+                });
+
+                let tl;
+                let isOpen = false;
+
+                const openCard = () => {
+                    if (isOpen) return;
+                    if (tl) tl.kill();
+                    tl = gsap.timeline();
+
+                    tl.to(otherStrokes, {
+                        strokeDashoffset: 0,
+                        strokeWidth: 400,
+                        duration: 1,
+                        stagger: 0.1,
+                        ease: "power2.inOut"
+                    })
+                    .to(solidFill, {
+                        strokeDashoffset: 0,
+                        strokeWidth: 1000, 
+                        duration: 1,
+                        ease: "power3.inOut"
+                    }, "-=0.8")
+                    .to(logo, {
+                        scale: 0.6,
+                        opacity: 0,
+                        duration: 0.5,
+                        ease: "power2.in"
+                    }, 0)
+                    .to(front, {
+                        opacity: 0,
+                        duration: 0.1
+                    }, "-=0.3")
+                    .to(revealLayer, {
+                        autoAlpha: 1,
+                        duration: 0.5,
+                        ease: "power2.out"
+                    }, "-=0.2");
+                    isOpen = true;
+                };
+
+                const closeCard = () => {
+                    if (!isOpen) return;
+                    if (tl) tl.kill();
+                    tl = gsap.timeline();
+
+                    tl.to(revealLayer, {
+                        autoAlpha: 0,
+                        duration: 0.3
+                    })
+                    .to(solidFill, {
+                        strokeDashoffset: solidFill.getTotalLength(),
+                        strokeWidth: 0,
+                        duration: 0.7,
+                        ease: "power3.in"
+                    }, "-=0.2")
+                    .to(otherStrokes, {
+                        strokeDashoffset: (i, el) => el.getTotalLength(),
+                        strokeWidth: 0,
+                        duration: 0.6,
+                        stagger: 0.05,
+                        ease: "power2.in"
+                    }, "-=0.5")
+                    .to(front, {
+                        opacity: 1,
+                        duration: 0.2
+                    }, "-=0.4")
+                    .to(logo, {
+                        scale: 1,
+                        opacity: 1,
+                        duration: 0.4,
+                        ease: "power2.out"
+                    }, "-=0.2");
+                    isOpen = false;
+                };
+
+                // Desktop Hover
+                card.addEventListener('mouseenter', openCard);
+                card.addEventListener('mouseleave', closeCard);
+
+                // Mobile Touch Support (Tap to Toggle)
+                card.addEventListener('click', (e) => {
+                    // Check if it's a mobile/tablet screen width
+                    if (window.innerWidth <= 1024) {
+                        if (!isOpen) {
+                            // Close all other cards first by calling their close logic directly
+                            cards.forEach(c => {
+                                if (c !== card && c.closeInstance) {
+                                    c.closeInstance();
+                                }
+                            });
+                            openCard();
+                        } else {
+                            closeCard();
+                        }
+                    }
+                });
+
+                // Attach close logic to the DOM element for cross-card access on mobile
+                card.closeInstance = closeCard;
+            });
+        });
+    </script>
+</body>
+</html>
